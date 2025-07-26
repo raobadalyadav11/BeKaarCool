@@ -8,50 +8,91 @@ export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     if (!session || (session.user.role !== "admin" && session.user.role !== "seller")) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
     }
 
     await connectDB()
 
     const { searchParams } = new URL(request.url)
-    const lowStock = searchParams.get("lowStock") === "true"
-    const sellerId = session.user.role === "seller" ? session.user.id : searchParams.get("sellerId")
+    const page = Number.parseInt(searchParams.get("page") || "1")
+    const limit = Number.parseInt(searchParams.get("limit") || "20")
+    const category = searchParams.get("category")
+    const status = searchParams.get("status")
+    const warehouse = searchParams.get("warehouse")
 
+    const skip = (page - 1) * limit
     const filter: any = {}
-    if (sellerId) filter.seller = sellerId
-    if (lowStock) filter.stock = { $lte: 10 } // Low stock threshold
 
-    const products = await Product.find(filter).populate("seller", "name email").sort({ stock: 1 })
+    // If seller, only show their products
+    if (session.user.role === "seller") {
+      filter.seller = session.user.id
+    }
 
-    const summary = await Product.aggregate([
-      ...(sellerId ? [{ $match: { seller: sellerId } }] : []),
-      {
-        $group: {
-          _id: null,
-          totalProducts: { $sum: 1 },
-          totalStock: { $sum: "$stock" },
-          lowStockProducts: {
-            $sum: { $cond: [{ $lte: ["$stock", 10] }, 1, 0] },
-          },
-          outOfStockProducts: {
-            $sum: { $cond: [{ $eq: ["$stock", 0] }, 1, 0] },
-          },
-        },
+    if (category && category !== "all") {
+      filter.category = category
+    }
+
+    if (status) {
+      switch (status) {
+        case "low-stock":
+          filter.stock = { $lte: 10 }
+          break
+        case "out-of-stock":
+          filter.stock = 0
+          break
+        case "in-stock":
+          filter.stock = { $gt: 0 }
+          break
+      }
+    }
+
+    const products = await Product.find(filter)
+      .populate("seller", "name email")
+      .select("name images category price stock sold views createdAt updatedAt")
+      .sort({ updatedAt: -1 })
+      .skip(skip)
+      .limit(limit)
+
+    const total = await Product.countDocuments(filter)
+
+    // Transform products to inventory items format
+    const items = products.map((product) => ({
+      _id: product._id,
+      product: {
+        _id: product._id,
+        name: product.name,
+        images: product.images,
+        category: product.category,
+        price: product.price,
       },
-    ])
+      stock: product.stock,
+      reserved: 0, // TODO: Calculate reserved stock from pending orders
+      available: product.stock,
+      lowStockThreshold: 10, // Default threshold
+      reorderPoint: 5, // Default reorder point
+      reorderQuantity: 50, // Default reorder quantity
+      createdAt: product.createdAt,
+      updatedAt: product.updatedAt,
+    }))
+
+    // Get low stock and out of stock items
+    const lowStockItems = items.filter((item) => item.stock <= item.lowStockThreshold && item.stock > 0)
+    const outOfStockItems = items.filter((item) => item.stock === 0)
 
     return NextResponse.json({
-      products,
-      summary: summary[0] || {
-        totalProducts: 0,
-        totalStock: 0,
-        lowStockProducts: 0,
-        outOfStockProducts: 0,
+      items,
+      lowStockItems,
+      outOfStockItems,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit),
       },
     })
   } catch (error) {
     console.error("Error fetching inventory:", error)
-    return NextResponse.json({ error: "Failed to fetch inventory" }, { status: 500 })
+    return NextResponse.json({ message: "Failed to fetch inventory" }, { status: 500 })
   }
 }
 
