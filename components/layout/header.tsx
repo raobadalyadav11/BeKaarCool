@@ -1,18 +1,12 @@
 "use client"
 
+import type React from "react"
+
 import { useState } from "react"
 import Link from "next/link"
+import { useSession, signOut } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import {
-  NavigationMenu,
-  NavigationMenuContent,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-  NavigationMenuTrigger,
-} from "@/components/ui/navigation-menu"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,199 +14,231 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Menu, ShoppingCart, User, Search, Heart, Palette, Shirt, Package, Truck, Bell } from "lucide-react"
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Input } from "@/components/ui/input"
+import { Search, ShoppingCart, User, Menu, Heart, Globe, Settings, LogOut, Package, BarChart3 } from "lucide-react"
+import { useSelector } from "react-redux"
+import type { RootState } from "@/store"
+import { useLanguage } from "@/contexts/language-context"
+import { useCurrency } from "@/contexts/currency-context"
+import { CartSheet } from "@/components/cart/cart-sheet"
+import { NotificationDropdown } from "@/components/notifications/notification-dropdown"
 
 export function Header() {
-  const [isOpen, setIsOpen] = useState(false)
-  const [cartCount] = useState(3)
+  const { data: session } = useSession()
+  const { t, language, setLanguage } = useLanguage()
+  const { currency, setCurrency } = useCurrency()
+  const [searchQuery, setSearchQuery] = useState("")
+  const [showCart, setShowCart] = useState(false)
+  const [showMobileMenu, setShowMobileMenu] = useState(false)
 
-  const productCategories = [
-    { name: "T-Shirts", href: "/products/t-shirts", icon: Shirt },
-    { name: "Hoodies", href: "/products/hoodies", icon: Package },
-    { name: "Accessories", href: "/products/accessories", icon: Heart },
-    { name: "Custom Design", href: "/design", icon: Palette },
+  const cartItems = useSelector((state: RootState) => state.cart.items)
+  const cartItemCount = cartItems.reduce((sum, item) => sum + item.quantity, 0)
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (searchQuery.trim()) {
+      window.location.href = `/products?search=${encodeURIComponent(searchQuery)}`
+    }
+  }
+
+  const navigation = [
+    { name: t("nav.home"), href: "/" },
+    { name: t("nav.products"), href: "/products" },
+    { name: t("nav.design"), href: "/design" },
+    { name: t("nav.about"), href: "/about" },
+    { name: t("nav.contact"), href: "/contact" },
   ]
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60">
+    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-              <Palette className="h-5 w-5 text-white" />
+            <div className="h-8 w-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+              <span className="text-white font-bold text-sm">D</span>
             </div>
-            <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              Draprly
-            </span>
+            <span className="font-bold text-xl">Draprly</span>
           </Link>
 
           {/* Desktop Navigation */}
-          <NavigationMenu className="hidden lg:flex">
-            <NavigationMenuList>
-              <NavigationMenuItem>
-                <NavigationMenuTrigger>Products</NavigationMenuTrigger>
-                <NavigationMenuContent>
-                  <div className="grid w-[400px] gap-3 p-4">
-                    {productCategories.map((category) => (
-                      <NavigationMenuLink key={category.name} asChild>
-                        <Link
-                          href={category.href}
-                          className="flex items-center space-x-3 rounded-md p-3 hover:bg-gray-100 transition-colors"
-                        >
-                          <category.icon className="h-5 w-5 text-blue-600" />
-                          <span className="font-medium">{category.name}</span>
-                        </Link>
-                      </NavigationMenuLink>
-                    ))}
-                  </div>
-                </NavigationMenuContent>
-              </NavigationMenuItem>
-
-              <NavigationMenuItem>
-                <Link href="/design" legacyBehavior passHref>
-                  <NavigationMenuLink className="group inline-flex h-10 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50 data-[active]:bg-accent/50 data-[state=open]:bg-accent/50">
-                    Design Studio
-                  </NavigationMenuLink>
-                </Link>
-              </NavigationMenuItem>
-
-              <NavigationMenuItem>
-                <Link href="/marketplace" legacyBehavior passHref>
-                  <NavigationMenuLink className="group inline-flex h-10 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50 data-[active]:bg-accent/50 data-[state=open]:bg-accent/50">
-                    Marketplace
-                  </NavigationMenuLink>
-                </Link>
-              </NavigationMenuItem>
-
-              <NavigationMenuItem>
-                <Link href="/about" legacyBehavior passHref>
-                  <NavigationMenuLink className="group inline-flex h-10 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50 data-[active]:bg-accent/50 data-[state=open]:bg-accent/50">
-                    About
-                  </NavigationMenuLink>
-                </Link>
-              </NavigationMenuItem>
-            </NavigationMenuList>
-          </NavigationMenu>
+          <nav className="hidden md:flex items-center space-x-6">
+            {navigation.map((item) => (
+              <Link
+                key={item.name}
+                href={item.href}
+                className="text-sm font-medium transition-colors hover:text-primary"
+              >
+                {item.name}
+              </Link>
+            ))}
+          </nav>
 
           {/* Search Bar */}
           <div className="hidden md:flex flex-1 max-w-md mx-8">
-            <div className="relative w-full">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input placeholder="Search products..." className="pl-10 pr-4" />
-            </div>
+            <form onSubmit={handleSearch} className="relative w-full">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="search"
+                placeholder="Search products..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 pr-4"
+              />
+            </form>
           </div>
 
-          {/* Right Actions */}
+          {/* Right Side Actions */}
           <div className="flex items-center space-x-4">
+            {/* Language Selector */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm">
+                  <Globe className="h-4 w-4" />
+                  <span className="ml-1 hidden sm:inline">{language.toUpperCase()}</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem onClick={() => setLanguage("en")}>English</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setLanguage("hi")}>हिंदी</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Currency Selector */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm">
+                  <span className="hidden sm:inline">{currency}</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem onClick={() => setCurrency("INR")}>₹ INR</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setCurrency("USD")}>$ USD</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setCurrency("EUR")}>€ EUR</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setCurrency("GBP")}>£ GBP</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
             {/* Notifications */}
-            <Button variant="ghost" size="sm" className="hidden md:flex">
-              <Bell className="h-5 w-5" />
-            </Button>
+            {session && <NotificationDropdown />}
 
             {/* Wishlist */}
-            <Button variant="ghost" size="sm" className="hidden md:flex">
-              <Heart className="h-5 w-5" />
-            </Button>
+            {session && (
+              <Button variant="ghost" size="sm" asChild>
+                <Link href="/wishlist">
+                  <Heart className="h-4 w-4" />
+                </Link>
+              </Button>
+            )}
 
             {/* Cart */}
-            <Button variant="ghost" size="sm" className="relative">
-              <ShoppingCart className="h-5 w-5" />
-              {cartCount > 0 && (
+            <Button variant="ghost" size="sm" onClick={() => setShowCart(true)} className="relative">
+              <ShoppingCart className="h-4 w-4" />
+              {cartItemCount > 0 && (
                 <Badge className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs">
-                  {cartCount}
+                  {cartItemCount}
                 </Badge>
               )}
             </Button>
 
             {/* User Menu */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm">
-                  <User className="h-5 w-5" />
+            {session ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm">
+                    <User className="h-4 w-4" />
+                    <span className="ml-1 hidden sm:inline">{session.user.name}</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem asChild>
+                    <Link href="/profile">
+                      <User className="mr-2 h-4 w-4" />
+                      Profile
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/orders">
+                      <Package className="mr-2 h-4 w-4" />
+                      Orders
+                    </Link>
+                  </DropdownMenuItem>
+                  {session.user.role === "seller" && (
+                    <DropdownMenuItem asChild>
+                      <Link href="/seller">
+                        <BarChart3 className="mr-2 h-4 w-4" />
+                        Seller Dashboard
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
+                  {session.user.role === "admin" && (
+                    <DropdownMenuItem asChild>
+                      <Link href="/admin">
+                        <Settings className="mr-2 h-4 w-4" />
+                        Admin Panel
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => signOut()}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Sign Out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <div className="flex items-center space-x-2">
+                <Button variant="ghost" size="sm" asChild>
+                  <Link href="/auth/login">Sign In</Link>
                 </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuItem>
-                  <User className="mr-2 h-4 w-4" />
-                  Profile
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <Package className="mr-2 h-4 w-4" />
-                  Orders
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <Truck className="mr-2 h-4 w-4" />
-                  Track Order
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>
-                  <Palette className="mr-2 h-4 w-4" />
-                  Seller Dashboard
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>Sign Out</DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                <Button size="sm" asChild>
+                  <Link href="/auth/register">Sign Up</Link>
+                </Button>
+              </div>
+            )}
 
             {/* Mobile Menu */}
-            <Sheet open={isOpen} onOpenChange={setIsOpen}>
+            <Sheet open={showMobileMenu} onOpenChange={setShowMobileMenu}>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="sm" className="lg:hidden">
-                  <Menu className="h-5 w-5" />
+                <Button variant="ghost" size="sm" className="md:hidden">
+                  <Menu className="h-4 w-4" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="w-80">
+              <SheetContent side="right">
                 <div className="flex flex-col space-y-4 mt-8">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <Input placeholder="Search products..." className="pl-10" />
-                  </div>
+                  {/* Mobile Search */}
+                  <form onSubmit={handleSearch} className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      type="search"
+                      placeholder="Search products..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-10"
+                    />
+                  </form>
 
-                  <div className="space-y-2">
-                    {productCategories.map((category) => (
-                      <Link
-                        key={category.name}
-                        href={category.href}
-                        className="flex items-center space-x-3 rounded-md p-3 hover:bg-gray-100 transition-colors"
-                        onClick={() => setIsOpen(false)}
-                      >
-                        <category.icon className="h-5 w-5 text-blue-600" />
-                        <span className="font-medium">{category.name}</span>
-                      </Link>
-                    ))}
-                  </div>
-
-                  <div className="border-t pt-4 space-y-2">
+                  {/* Mobile Navigation */}
+                  {navigation.map((item) => (
                     <Link
-                      href="/design"
-                      className="block px-3 py-2 rounded-md hover:bg-gray-100 transition-colors"
-                      onClick={() => setIsOpen(false)}
+                      key={item.name}
+                      href={item.href}
+                      className="text-sm font-medium py-2"
+                      onClick={() => setShowMobileMenu(false)}
                     >
-                      Design Studio
+                      {item.name}
                     </Link>
-                    <Link
-                      href="/marketplace"
-                      className="block px-3 py-2 rounded-md hover:bg-gray-100 transition-colors"
-                      onClick={() => setIsOpen(false)}
-                    >
-                      Marketplace
-                    </Link>
-                    <Link
-                      href="/about"
-                      className="block px-3 py-2 rounded-md hover:bg-gray-100 transition-colors"
-                      onClick={() => setIsOpen(false)}
-                    >
-                      About
-                    </Link>
-                  </div>
+                  ))}
                 </div>
               </SheetContent>
             </Sheet>
           </div>
         </div>
       </div>
+
+      {/* Cart Sheet */}
+      <CartSheet open={showCart} onOpenChange={setShowCart} />
     </header>
   )
 }

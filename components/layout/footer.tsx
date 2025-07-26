@@ -1,17 +1,16 @@
+"use client"
+
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
-import { Palette, Facebook, Twitter, Instagram, Youtube, Mail, Phone, MapPin } from "lucide-react"
+import { Facebook, Instagram, Twitter, Youtube, Mail, Phone, MapPin } from "lucide-react"
+import { useLanguage } from "@/contexts/language-context"
 
 export function Footer() {
+  const { t } = useLanguage()
+
   const footerLinks = {
-    products: [
-      { name: "T-Shirts", href: "/products/t-shirts" },
-      { name: "Hoodies", href: "/products/hoodies" },
-      { name: "Accessories", href: "/products/accessories" },
-      { name: "Custom Design", href: "/design" },
-    ],
     company: [
       { name: "About Us", href: "/about" },
       { name: "Careers", href: "/careers" },
@@ -23,64 +22,76 @@ export function Footer() {
       { name: "Contact Us", href: "/contact" },
       { name: "Size Guide", href: "/size-guide" },
       { name: "Shipping Info", href: "/shipping" },
+      { name: "Returns", href: "/returns" },
     ],
     legal: [
       { name: "Privacy Policy", href: "/privacy" },
       { name: "Terms of Service", href: "/terms" },
-      { name: "Return Policy", href: "/returns" },
       { name: "Cookie Policy", href: "/cookies" },
+      { name: "Refund Policy", href: "/refund" },
+    ],
+    categories: [
+      { name: "T-Shirts", href: "/products?category=T-Shirts" },
+      { name: "Hoodies", href: "/products?category=Hoodies" },
+      { name: "Accessories", href: "/products?category=Accessories" },
+      { name: "Custom Design", href: "/design" },
     ],
   }
 
   return (
     <footer className="bg-gray-900 text-white">
-      <div className="container mx-auto px-4 py-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-8">
-          {/* Brand Section */}
-          <div className="lg:col-span-2 space-y-4">
-            <Link href="/" className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-                <Palette className="h-5 w-5 text-white" />
+      <div className="container mx-auto px-4 py-12">
+        {/* Newsletter Section */}
+        <div className="mb-12 text-center">
+          <h3 className="text-2xl font-bold mb-4">Stay Updated</h3>
+          <p className="text-gray-400 mb-6 max-w-2xl mx-auto">
+            Subscribe to our newsletter for the latest designs, exclusive offers, and printing tips.
+          </p>
+          <div className="flex max-w-md mx-auto">
+            <Input
+              type="email"
+              placeholder="Enter your email"
+              className="bg-gray-800 border-gray-700 text-white placeholder-gray-400"
+            />
+            <Button className="ml-2">Subscribe</Button>
+          </div>
+        </div>
+
+        <Separator className="bg-gray-800 mb-12" />
+
+        {/* Main Footer Content */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 mb-12">
+          {/* Company Info */}
+          <div className="lg:col-span-2">
+            <Link href="/" className="flex items-center space-x-2 mb-4">
+              <div className="h-8 w-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+                <span className="text-white font-bold text-sm">D</span>
               </div>
-              <span className="text-2xl font-bold">Draprly</span>
+              <span className="font-bold text-xl">Draprly</span>
             </Link>
-            <p className="text-gray-400 max-w-md">
-              Transform your ideas into premium custom clothing and accessories. Design, print, and sell with our
-              all-in-one e-commerce platform.
+            <p className="text-gray-400 mb-6 max-w-md">
+              Create, customize, and sell premium custom clothing and accessories with our advanced design tools and
+              print-on-demand platform.
             </p>
-            <div className="flex space-x-4">
-              <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white">
-                <Facebook className="h-5 w-5" />
-              </Button>
-              <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white">
-                <Twitter className="h-5 w-5" />
-              </Button>
-              <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white">
-                <Instagram className="h-5 w-5" />
-              </Button>
-              <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white">
-                <Youtube className="h-5 w-5" />
-              </Button>
+            <div className="space-y-2">
+              <div className="flex items-center text-gray-400">
+                <Mail className="h-4 w-4 mr-2" />
+                <span>support@draprly.com</span>
+              </div>
+              <div className="flex items-center text-gray-400">
+                <Phone className="h-4 w-4 mr-2" />
+                <span>+91 98765 43210</span>
+              </div>
+              <div className="flex items-center text-gray-400">
+                <MapPin className="h-4 w-4 mr-2" />
+                <span>Mumbai, Maharashtra, India</span>
+              </div>
             </div>
           </div>
 
-          {/* Products */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Products</h3>
-            <ul className="space-y-2">
-              {footerLinks.products.map((link) => (
-                <li key={link.name}>
-                  <Link href={link.href} className="text-gray-400 hover:text-white transition-colors">
-                    {link.name}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Company */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Company</h3>
+          {/* Company Links */}
+          <div>
+            <h4 className="font-semibold mb-4">Company</h4>
             <ul className="space-y-2">
               {footerLinks.company.map((link) => (
                 <li key={link.name}>
@@ -92,9 +103,9 @@ export function Footer() {
             </ul>
           </div>
 
-          {/* Support */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Support</h3>
+          {/* Support Links */}
+          <div>
+            <h4 className="font-semibold mb-4">Support</h4>
             <ul className="space-y-2">
               {footerLinks.support.map((link) => (
                 <li key={link.name}>
@@ -106,59 +117,56 @@ export function Footer() {
             </ul>
           </div>
 
-          {/* Newsletter */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Stay Updated</h3>
-            <p className="text-gray-400 text-sm">Subscribe to get special offers and updates</p>
-            <div className="space-y-2">
-              <Input
-                placeholder="Enter your email"
-                className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-400"
-              />
-              <Button className="w-full bg-blue-600 hover:bg-blue-700">Subscribe</Button>
-            </div>
+          {/* Categories */}
+          <div>
+            <h4 className="font-semibold mb-4">Categories</h4>
+            <ul className="space-y-2">
+              {footerLinks.categories.map((link) => (
+                <li key={link.name}>
+                  <Link href={link.href} className="text-gray-400 hover:text-white transition-colors">
+                    {link.name}
+                  </Link>
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
 
-        <Separator className="my-8 bg-gray-800" />
-
-        {/* Contact Info */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="flex items-center space-x-3">
-            <Mail className="h-5 w-5 text-blue-400" />
-            <div>
-              <p className="text-sm text-gray-400">Email</p>
-              <p className="text-white">support@draprly.com</p>
-            </div>
-          </div>
-          <div className="flex items-center space-x-3">
-            <Phone className="h-5 w-5 text-blue-400" />
-            <div>
-              <p className="text-sm text-gray-400">Phone</p>
-              <p className="text-white">+91 98765 43210</p>
-            </div>
-          </div>
-          <div className="flex items-center space-x-3">
-            <MapPin className="h-5 w-5 text-blue-400" />
-            <div>
-              <p className="text-sm text-gray-400">Address</p>
-              <p className="text-white">Mumbai, Maharashtra, India</p>
-            </div>
-          </div>
-        </div>
-
-        <Separator className="my-8 bg-gray-800" />
+        <Separator className="bg-gray-800 mb-8" />
 
         {/* Bottom Section */}
-        <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
-          <div className="flex flex-wrap gap-6 text-sm text-gray-400">
+        <div className="flex flex-col md:flex-row justify-between items-center">
+          <div className="flex flex-wrap justify-center md:justify-start space-x-6 mb-4 md:mb-0">
             {footerLinks.legal.map((link) => (
-              <Link key={link.name} href={link.href} className="hover:text-white transition-colors">
+              <Link key={link.name} href={link.href} className="text-gray-400 hover:text-white transition-colors">
                 {link.name}
               </Link>
             ))}
           </div>
-          <p className="text-sm text-gray-400">© 2024 Draprly. All rights reserved.</p>
+
+          {/* Social Media */}
+          <div className="flex space-x-4">
+            <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white">
+              <Facebook className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white">
+              <Instagram className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white">
+              <Twitter className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white">
+              <Youtube className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+
+        <Separator className="bg-gray-800 my-8" />
+
+        {/* Copyright */}
+        <div className="text-center text-gray-400">
+          <p>&copy; 2024 Draprly. All rights reserved.</p>
+          <p className="mt-2 text-sm">Made with ❤️ in India | Secure payments powered by Razorpay & PhonePe</p>
         </div>
       </div>
     </footer>

@@ -1,35 +1,45 @@
 import mongoose from "mongoose"
 
-const cartItemSchema = new mongoose.Schema(
-  {
-    product: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Product",
-      required: true,
-    },
-    quantity: {
-      type: Number,
-      required: true,
-      min: 1,
-      default: 1,
-    },
-    size: {
-      type: String,
-      required: true,
-    },
-    color: {
-      type: String,
-      required: true,
-    },
-    price: {
-      type: Number,
-      required: true,
-    },
+const cartItemSchema = new mongoose.Schema({
+  product: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Product",
+    required: true,
   },
-  {
-    timestamps: true,
+  quantity: {
+    type: Number,
+    required: true,
+    min: 1,
   },
-)
+  size: {
+    type: String,
+    required: true,
+  },
+  color: {
+    type: String,
+    required: true,
+  },
+  customization: {
+    text: String,
+    font: String,
+    fontSize: Number,
+    color: String,
+    position: {
+      x: Number,
+      y: Number,
+    },
+    images: [String],
+    design: String,
+  },
+  price: {
+    type: Number,
+    required: true,
+  },
+  addedAt: {
+    type: Date,
+    default: Date.now,
+  },
+})
 
 const cartSchema = new mongoose.Schema(
   {
@@ -44,7 +54,19 @@ const cartSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
-    updatedAt: {
+    subtotal: {
+      type: Number,
+      default: 0,
+    },
+    discount: {
+      type: Number,
+      default: 0,
+    },
+    couponCode: {
+      type: String,
+      default: null,
+    },
+    lastUpdated: {
       type: Date,
       default: Date.now,
     },
@@ -54,9 +76,6 @@ const cartSchema = new mongoose.Schema(
   },
 )
 
-cartSchema.pre("save", function (next) {
-  this.total = this.items.reduce((sum, item) => sum + item.price * item.quantity, 0)
-  next()
-})
+cartSchema.index({ user: 1 })
 
 export const Cart = mongoose.models.Cart || mongoose.model("Cart", cartSchema)

@@ -2,17 +2,22 @@ import type React from "react"
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
-import { Header } from "@/components/layout/header"
-import { Footer } from "@/components/layout/footer"
+import { Providers } from "@/components/providers"
 import { Toaster } from "@/components/ui/toaster"
-import { CartProvider } from "@/contexts/cart-context"
-import { AuthProvider } from "@/contexts/auth-context"
+import { Toaster as SonnerToaster } from "@/components/ui/sonner"
 
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
   title: "Draprly - Custom Print-on-Demand Platform",
-  description: "Create, customize, and sell premium custom clothing and accessories",
+  description: "Create, customize, and sell premium custom clothing and accessories with advanced design tools",
+  keywords: "custom clothing, print on demand, design studio, e-commerce, canvas editor",
+  authors: [{ name: "Draprly Team" }],
+  openGraph: {
+    title: "Draprly - Custom Print-on-Demand Platform",
+    description: "Create, customize, and sell premium custom clothing and accessories",
+    images: ["/og-image.jpg"],
+  },
     generator: 'v0.dev'
 }
 
@@ -22,16 +27,13 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        <AuthProvider>
-          <CartProvider>
-            <Header />
-            <main className="min-h-screen">{children}</main>
-            <Footer />
-            <Toaster />
-          </CartProvider>
-        </AuthProvider>
+        <Providers>
+          {children}
+          <Toaster />
+          <SonnerToaster />
+        </Providers>
       </body>
     </html>
   )

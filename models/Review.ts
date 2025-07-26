@@ -12,6 +12,11 @@ const reviewSchema = new mongoose.Schema(
       ref: "Product",
       required: true,
     },
+    order: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Order",
+      required: true,
+    },
     rating: {
       type: Number,
       required: true,
@@ -28,11 +33,7 @@ const reviewSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
-    images: [
-      {
-        type: String,
-      },
-    ],
+    images: [String],
     verified: {
       type: Boolean,
       default: false,
@@ -41,13 +42,13 @@ const reviewSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
-    size: {
-      type: String,
-      default: "",
+    reported: {
+      type: Boolean,
+      default: false,
     },
-    color: {
-      type: String,
-      default: "",
+    isActive: {
+      type: Boolean,
+      default: true,
     },
   },
   {
@@ -56,7 +57,11 @@ const reviewSchema = new mongoose.Schema(
 )
 
 reviewSchema.index({ product: 1 })
+reviewSchema.index({ user: 1 })
+reviewSchema.index({ rating: 1 })
+reviewSchema.index({ createdAt: -1 })
+
+// Ensure one review per user per product
 reviewSchema.index({ user: 1, product: 1 }, { unique: true })
-reviewSchema.index({ rating: -1 })
 
 export const Review = mongoose.models.Review || mongoose.model("Review", reviewSchema)
