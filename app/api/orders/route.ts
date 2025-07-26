@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
     }
 
     await connectDB()
@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
     })
   } catch (error) {
     console.error("Error fetching orders:", error)
-    return NextResponse.json({ error: "Failed to fetch orders" }, { status: 500 })
+    return NextResponse.json({ message: "Failed to fetch orders" }, { status: 500 })
   }
 }
 
@@ -57,27 +57,15 @@ export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
     }
 
     await connectDB()
 
-    const { items, shippingAddress, paymentMethod, paymentId, total, subtotal, shipping, tax, discount, couponCode } =
-      await request.json()
-
-    // Validate stock availability
-    for (const item of items) {
-      const product = await Product.findById(item.product)
-      if (!product || product.stock < item.quantity) {
-        return NextResponse.json({ error: `Insufficient stock for ${product?.name || "product"}` }, { status: 400 })
-      }
-    }
-
-    // Create order
-    const order = new Order({
-      user: session.user.id,
+    const {
       items,
       shippingAddress,
+      billingAddress,
       paymentMethod,
       paymentId,
       total,
@@ -86,8 +74,57 @@ export async function POST(request: NextRequest) {
       tax,
       discount,
       couponCode,
+      affiliateCode,
+    } = await request.json()
+
+    // Validate required fields
+    if (!items || !shippingAddress || !paymentMethod || !total) {
+      return NextResponse.json({ message: "Missing required fields" }, { status: 400 })
+    }
+
+    // Validate stock availability
+    for (const item of items) {
+      const product = await Product.findById(item.product)
+      if (!product || product.stock < item.quantity) {
+        return NextResponse.json({ message: `Insufficient stock for ${product?.name || "product"}` }, { status: 400 })
+      }
+    }
+
+    // Calculate affiliate commission if applicable
+    let affiliateCommission = 0
+    if (affiliateCode) {
+      const affiliate = await User.findOne({ affiliateCode })
+      if (affiliate) {
+        affiliateCommission = total * 0.05 // 5% commission
+        affiliate.affiliateEarnings += affiliateCommission
+        await affiliate.save()
+      }
+    }
+
+    // Create order
+    const order = new Order({
+      user: session.user.id,
+      items: items.map((item: any) => ({
+        ...item,
+        seller: item.sellerId, // Assuming sellerId is provided
+      })),
+      shippingAddress,
+      billingAddress: billingAddress || shippingAddress,
+      paymentMethod,
+      paymentId,
+      total,
+      subtotal,
+      shipping: shipping || 0,
+      tax: tax || 0,
+      discount: discount || 0,
+      couponCode,
+      affiliateCode,
+      affiliateCommission,
       status: paymentMethod === "cod" ? "confirmed" : "pending",
+      paymentStatus: paymentMethod === "cod" ? "pending" : "completed",
       estimatedDelivery: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+      createdAt: new Date(),
+      updatedAt: new Date(),
     })
 
     await order.save()
@@ -106,7 +143,11 @@ export async function POST(request: NextRequest) {
     const user = await User.findById(session.user.id)
 
     // Send order confirmation email
-    await sendOrderConfirmationEmail(user.email, user.name, order)
+    try {
+      await sendOrderConfirmationEmail(user.email, user.name, order)
+    } catch (emailError) {
+      console.error("Failed to send order confirmation email:", emailError)
+    }
 
     // Create shipment if payment is confirmed
     if (paymentMethod !== "cod") {
@@ -119,9 +160,12 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Populate order for response
+    await order.populate("items.product", "name images")
+
     return NextResponse.json(order, { status: 201 })
   } catch (error) {
     console.error("Error creating order:", error)
-    return NextResponse.json({ error: "Failed to create order" }, { status: 500 })
+    return NextResponse.json({ message: "Failed to create order" }, { status: 500 })
   }
 }

@@ -1,9 +1,8 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { connectDB } from "@/lib/mongodb"
-import { User } from "@/models/User"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
-import bcrypt from "bcryptjs"
+import { connectDB } from "@/lib/mongodb"
+import { User } from "@/models/User"
 
 export async function GET(request: NextRequest) {
   try {
@@ -21,7 +20,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(user)
   } catch (error) {
-    console.error("Profile fetch error:", error)
+    console.error("Error fetching profile:", error)
     return NextResponse.json({ message: "Internal server error" }, { status: 500 })
   }
 }
@@ -35,40 +34,33 @@ export async function PUT(request: NextRequest) {
 
     await connectDB()
 
-    const updateData = await request.json()
-    const { currentPassword, newPassword, ...otherData } = updateData
+    const body = await request.json()
+    const { preferences, avatar, ...profileData } = body
 
-    const user = await User.findById(session.user.id).select("+password")
+    const updateData: any = {
+      ...profileData,
+      updatedAt: new Date(),
+    }
+
+    if (preferences) {
+      updateData.preferences = preferences
+    }
+
+    if (avatar) {
+      updateData.avatar = avatar
+    }
+
+    const user = await User.findByIdAndUpdate(session.user.id, updateData, { new: true, runValidators: true }).select(
+      "-password",
+    )
+
     if (!user) {
       return NextResponse.json({ message: "User not found" }, { status: 404 })
     }
 
-    // Handle password change
-    if (currentPassword && newPassword) {
-      const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.password)
-      if (!isCurrentPasswordValid) {
-        return NextResponse.json({ message: "Current password is incorrect" }, { status: 400 })
-      }
-
-      if (newPassword.length < 6) {
-        return NextResponse.json({ message: "New password must be at least 6 characters long" }, { status: 400 })
-      }
-
-      otherData.password = await bcrypt.hash(newPassword, 12)
-    }
-
-    const updatedUser = await User.findByIdAndUpdate(
-      session.user.id,
-      { ...otherData, updatedAt: new Date() },
-      { new: true, runValidators: true },
-    ).select("-password")
-
-    return NextResponse.json({
-      user: updatedUser,
-      message: "Profile updated successfully",
-    })
+    return NextResponse.json(user)
   } catch (error) {
-    console.error("Profile update error:", error)
+    console.error("Error updating profile:", error)
     return NextResponse.json({ message: "Internal server error" }, { status: 500 })
   }
 }

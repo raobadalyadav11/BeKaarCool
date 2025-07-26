@@ -2,7 +2,7 @@ import nodemailer from "nodemailer"
 
 const transporter = nodemailer.createTransporter({
   host: process.env.SMTP_HOST,
-  port: Number.parseInt(process.env.SMTP_PORT || "587"),
+  port: Number(process.env.SMTP_PORT),
   secure: process.env.SMTP_PORT === "465",
   auth: {
     user: process.env.SMTP_USER,
@@ -10,22 +10,31 @@ const transporter = nodemailer.createTransporter({
   },
 })
 
-export async function sendWelcomeEmail(email: string, name: string) {
+export async function sendVerificationEmail(email: string, name: string, token: string) {
+  const verificationUrl = `${process.env.NEXT_PUBLIC_APP_URL}/auth/verify?token=${token}`
+
   const mailOptions = {
     from: process.env.FROM_EMAIL,
     to: email,
-    subject: "Welcome to Draprly!",
+    subject: "Verify your Draprly account",
     html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h1 style="color: #333;">Welcome to Draprly, ${name}!</h1>
-        <p>Thank you for joining our custom print-on-demand platform.</p>
-        <p>You can now:</p>
-        <ul>
-          <li>Browse thousands of customizable products</li>
-          <li>Create your own designs with our canvas editor</li>
-          <li>Start selling your own products</li>
-        </ul>
-        <a href="${process.env.NEXT_PUBLIC_APP_URL}" style="background: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Get Started</a>
+      <div style="max-width: 600px; margin: 0 auto; padding: 20px; font-family: Arial, sans-serif;">
+        <h1 style="color: #333; text-align: center;">Welcome to Draprly!</h1>
+        <p>Hi ${name},</p>
+        <p>Thank you for signing up for Draprly. Please click the button below to verify your email address:</p>
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${verificationUrl}" style="background-color: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">
+            Verify Email Address
+          </a>
+        </div>
+        <p>If the button doesn't work, you can also copy and paste this link into your browser:</p>
+        <p style="word-break: break-all; color: #007bff;">${verificationUrl}</p>
+        <p>This link will expire in 24 hours.</p>
+        <p>If you didn't create an account with Draprly, you can safely ignore this email.</p>
+        <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
+        <p style="color: #666; font-size: 12px; text-align: center;">
+          This email was sent by Draprly. If you have any questions, please contact us at ${process.env.SUPPORT_EMAIL}
+        </p>
       </div>
     `,
   }
@@ -33,22 +42,31 @@ export async function sendWelcomeEmail(email: string, name: string) {
   await transporter.sendMail(mailOptions)
 }
 
-export async function sendPasswordResetEmail(email: string, name: string, resetToken: string) {
-  const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL}/auth/reset-password?token=${resetToken}`
+export async function sendPasswordResetEmail(email: string, name: string, token: string) {
+  const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL}/auth/reset-password?token=${token}`
 
   const mailOptions = {
     from: process.env.FROM_EMAIL,
     to: email,
-    subject: "Password Reset Request",
+    subject: "Reset your Draprly password",
     html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h1 style="color: #333;">Password Reset Request</h1>
+      <div style="max-width: 600px; margin: 0 auto; padding: 20px; font-family: Arial, sans-serif;">
+        <h1 style="color: #333; text-align: center;">Password Reset Request</h1>
         <p>Hi ${name},</p>
-        <p>You requested a password reset for your Draprly account.</p>
-        <p>Click the button below to reset your password:</p>
-        <a href="${resetUrl}" style="background: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Reset Password</a>
+        <p>We received a request to reset your password for your Draprly account. Click the button below to reset your password:</p>
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${resetUrl}" style="background-color: #dc3545; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">
+            Reset Password
+          </a>
+        </div>
+        <p>If the button doesn't work, you can also copy and paste this link into your browser:</p>
+        <p style="word-break: break-all; color: #dc3545;">${resetUrl}</p>
         <p>This link will expire in 1 hour.</p>
-        <p>If you didn't request this, please ignore this email.</p>
+        <p>If you didn't request a password reset, you can safely ignore this email. Your password will not be changed.</p>
+        <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
+        <p style="color: #666; font-size: 12px; text-align: center;">
+          This email was sent by Draprly. If you have any questions, please contact us at ${process.env.SUPPORT_EMAIL}
+        </p>
       </div>
     `,
   }
@@ -57,23 +75,69 @@ export async function sendPasswordResetEmail(email: string, name: string, resetT
 }
 
 export async function sendOrderConfirmationEmail(email: string, name: string, order: any) {
+  const orderUrl = `${process.env.NEXT_PUBLIC_APP_URL}/orders/${order._id}`
+
+  const itemsHtml = order.items
+    .map(
+      (item: any) => `
+    <tr>
+      <td style="padding: 10px; border-bottom: 1px solid #eee;">
+        ${item.product?.name || item.name}
+      </td>
+      <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: center;">
+        ${item.quantity}
+      </td>
+      <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">
+        ₹${item.price}
+      </td>
+    </tr>
+  `,
+    )
+    .join("")
+
   const mailOptions = {
     from: process.env.FROM_EMAIL,
     to: email,
     subject: `Order Confirmation - ${order.orderNumber}`,
     html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h1 style="color: #333;">Order Confirmed!</h1>
+      <div style="max-width: 600px; margin: 0 auto; padding: 20px; font-family: Arial, sans-serif;">
+        <h1 style="color: #333; text-align: center;">Order Confirmed!</h1>
         <p>Hi ${name},</p>
-        <p>Thank you for your order. Here are the details:</p>
-        <div style="background: #f8f9fa; padding: 20px; border-radius: 5px; margin: 20px 0;">
-          <h3>Order #${order.orderNumber}</h3>
-          <p><strong>Total:</strong> ₹${order.total}</p>
-          <p><strong>Payment Method:</strong> ${order.paymentMethod.toUpperCase()}</p>
-          <p><strong>Status:</strong> ${order.status}</p>
+        <p>Thank you for your order! We've received your order and it's being processed.</p>
+        
+        <div style="background-color: #f8f9fa; padding: 20px; border-radius: 5px; margin: 20px 0;">
+          <h2 style="margin-top: 0;">Order Details</h2>
+          <p><strong>Order Number:</strong> ${order.orderNumber}</p>
+          <p><strong>Order Date:</strong> ${new Date(order.createdAt).toLocaleDateString()}</p>
+          <p><strong>Total Amount:</strong> ₹${order.total}</p>
         </div>
-        <p>We'll send you another email when your order ships.</p>
-        <a href="${process.env.NEXT_PUBLIC_APP_URL}/orders/${order._id}" style="background: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Track Order</a>
+
+        <h3>Items Ordered:</h3>
+        <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+          <thead>
+            <tr style="background-color: #f8f9fa;">
+              <th style="padding: 10px; text-align: left; border-bottom: 2px solid #dee2e6;">Item</th>
+              <th style="padding: 10px; text-align: center; border-bottom: 2px solid #dee2e6;">Quantity</th>
+              <th style="padding: 10px; text-align: right; border-bottom: 2px solid #dee2e6;">Price</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${itemsHtml}
+          </tbody>
+        </table>
+
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${orderUrl}" style="background-color: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">
+            View Order Details
+          </a>
+        </div>
+
+        <p>We'll send you another email when your order ships with tracking information.</p>
+        
+        <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
+        <p style="color: #666; font-size: 12px; text-align: center;">
+          This email was sent by Draprly. If you have any questions, please contact us at ${process.env.SUPPORT_EMAIL}
+        </p>
       </div>
     `,
   }
@@ -81,47 +145,47 @@ export async function sendOrderConfirmationEmail(email: string, name: string, or
   await transporter.sendMail(mailOptions)
 }
 
-export async function sendOrderStatusEmail(email: string, name: string, order: any) {
+export async function sendOrderStatusUpdateEmail(email: string, name: string, order: any, newStatus: string) {
+  const orderUrl = `${process.env.NEXT_PUBLIC_APP_URL}/orders/${order._id}`
+
+  const statusMessages = {
+    confirmed: "Your order has been confirmed and is being prepared.",
+    processing: "Your order is currently being processed.",
+    shipped: "Great news! Your order has been shipped.",
+    delivered: "Your order has been delivered successfully.",
+    cancelled: "Your order has been cancelled.",
+    refunded: "Your order has been refunded.",
+  }
+
+  const message = statusMessages[newStatus as keyof typeof statusMessages] || "Your order status has been updated."
+
   const mailOptions = {
     from: process.env.FROM_EMAIL,
     to: email,
     subject: `Order Update - ${order.orderNumber}`,
     html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h1 style="color: #333;">Order Status Update</h1>
+      <div style="max-width: 600px; margin: 0 auto; padding: 20px; font-family: Arial, sans-serif;">
+        <h1 style="color: #333; text-align: center;">Order Update</h1>
         <p>Hi ${name},</p>
-        <p>Your order status has been updated:</p>
-        <div style="background: #f8f9fa; padding: 20px; border-radius: 5px; margin: 20px 0;">
-          <h3>Order #${order.orderNumber}</h3>
-          <p><strong>Status:</strong> ${order.status}</p>
+        <p>${message}</p>
+        
+        <div style="background-color: #f8f9fa; padding: 20px; border-radius: 5px; margin: 20px 0;">
+          <h2 style="margin-top: 0;">Order Details</h2>
+          <p><strong>Order Number:</strong> ${order.orderNumber}</p>
+          <p><strong>Status:</strong> <span style="text-transform: capitalize; color: #007bff;">${newStatus}</span></p>
           ${order.trackingNumber ? `<p><strong>Tracking Number:</strong> ${order.trackingNumber}</p>` : ""}
         </div>
-        <a href="${process.env.NEXT_PUBLIC_APP_URL}/orders/${order._id}" style="background: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Track Order</a>
-      </div>
-    `,
-  }
 
-  await transporter.sendMail(mailOptions)
-}
-
-export async function sendSupportTicketEmail(ticket: any) {
-  const mailOptions = {
-    from: process.env.FROM_EMAIL,
-    to: process.env.SUPPORT_EMAIL,
-    subject: `New Support Ticket - ${ticket.ticketNumber}`,
-    html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h1 style="color: #333;">New Support Ticket</h1>
-        <div style="background: #f8f9fa; padding: 20px; border-radius: 5px; margin: 20px 0;">
-          <h3>Ticket #${ticket.ticketNumber}</h3>
-          <p><strong>From:</strong> ${ticket.user.name} (${ticket.user.email})</p>
-          <p><strong>Subject:</strong> ${ticket.subject}</p>
-          <p><strong>Category:</strong> ${ticket.category}</p>
-          <p><strong>Priority:</strong> ${ticket.priority}</p>
-          <p><strong>Description:</strong></p>
-          <p>${ticket.description}</p>
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${orderUrl}" style="background-color: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">
+            View Order Details
+          </a>
         </div>
-        <a href="${process.env.NEXT_PUBLIC_APP_URL}/admin/support/${ticket._id}" style="background: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">View Ticket</a>
+        
+        <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
+        <p style="color: #666; font-size: 12px; text-align: center;">
+          This email was sent by Draprly. If you have any questions, please contact us at ${process.env.SUPPORT_EMAIL}
+        </p>
       </div>
     `,
   }

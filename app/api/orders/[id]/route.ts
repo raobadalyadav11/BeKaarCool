@@ -3,87 +3,74 @@ import { connectDB } from "@/lib/mongodb"
 import { Order } from "@/models/Order"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
-import { sendOrderStatusEmail } from "@/lib/email"
-import { trackShipment } from "@/lib/shiprocket"
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
     }
 
     await connectDB()
 
     const order = await Order.findById(params.id)
-      .populate("items.product", "name images price")
+      .populate("items.product", "name images")
       .populate("user", "name email")
 
     if (!order) {
-      return NextResponse.json({ error: "Order not found" }, { status: 404 })
+      return NextResponse.json({ message: "Order not found" }, { status: 404 })
     }
 
     // Check if user owns the order or is admin/seller
     if (
       order.user._id.toString() !== session.user.id &&
       session.user.role !== "admin" &&
-      session.user.role !== "seller"
+      !order.items.some((item: any) => item.seller.toString() === session.user.id)
     ) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+      return NextResponse.json({ message: "Forbidden" }, { status: 403 })
     }
 
-    // Get tracking info if available
-    let trackingInfo = null
-    if (order.trackingNumber) {
-      try {
-        trackingInfo = await trackShipment(order.trackingNumber)
-      } catch (error) {
-        console.error("Tracking error:", error)
-      }
-    }
-
-    return NextResponse.json({ ...order.toObject(), trackingInfo })
+    return NextResponse.json(order)
   } catch (error) {
     console.error("Error fetching order:", error)
-    return NextResponse.json({ error: "Failed to fetch order" }, { status: 500 })
+    return NextResponse.json({ message: "Failed to fetch order" }, { status: 500 })
   }
 }
 
 export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const session = await getServerSession(authOptions)
-    if (!session || (session.user.role !== "admin" && session.user.role !== "seller")) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    if (!session?.user?.id) {
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
     }
 
     await connectDB()
 
-    const { status, trackingNumber, notes } = await request.json()
-
-    const order = await Order.findById(params.id).populate("user", "name email")
+    const order = await Order.findById(params.id)
     if (!order) {
-      return NextResponse.json({ error: "Order not found" }, { status: 404 })
+      return NextResponse.json({ message: "Order not found" }, { status: 404 })
     }
 
-    const updateData: any = {}
-    if (status) updateData.status = status
-    if (trackingNumber) updateData.trackingNumber = trackingNumber
-    if (notes) updateData.notes = notes
+    // Check permissions
+    const canUpdate =
+      session.user.role === "admin" ||
+      order.items.some((item: any) => item.seller.toString() === session.user.id) ||
+      (order.user.toString() === session.user.id && ["pending", "confirmed"].includes(order.status))
 
-    if (status === "delivered") {
-      updateData.deliveredAt = new Date()
+    if (!canUpdate) {
+      return NextResponse.json({ message: "Forbidden" }, { status: 403 })
     }
 
-    const updatedOrder = await Order.findByIdAndUpdate(params.id, updateData, { new: true })
-
-    // Send status update email
-    if (status) {
-      await sendOrderStatusEmail(order.user.email, order.user.name, updatedOrder)
-    }
+    const body = await request.json()
+    const updatedOrder = await Order.findByIdAndUpdate(
+      params.id,
+      { ...body, updatedAt: new Date() },
+      { new: true, runValidators: true },
+    ).populate("items.product", "name images")
 
     return NextResponse.json(updatedOrder)
   } catch (error) {
     console.error("Error updating order:", error)
-    return NextResponse.json({ error: "Failed to update order" }, { status: 500 })
+    return NextResponse.json({ message: "Failed to update order" }, { status: 500 })
   }
 }
