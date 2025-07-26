@@ -4,40 +4,23 @@ import { Badge } from "@/components/ui/badge"
 import { Star, ShoppingCart, Truck, Shield, Palette, Users } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
+import { ProductCard } from "@/components/product/product-card"
 
-export default function HomePage() {
-  const featuredProducts = [
-    {
-      id: 1,
-      name: "Custom T-Shirt Design",
-      price: 599,
-      originalPrice: 799,
-      image: "/placeholder.svg?height=300&width=300",
-      rating: 4.8,
-      reviews: 124,
-      badge: "Bestseller",
-    },
-    {
-      id: 2,
-      name: "Premium Hoodie",
-      price: 1299,
-      originalPrice: 1599,
-      image: "/placeholder.svg?height=300&width=300",
-      rating: 4.9,
-      reviews: 89,
-      badge: "New",
-    },
-    {
-      id: 3,
-      name: "Canvas Tote Bag",
-      price: 399,
-      originalPrice: 499,
-      image: "/placeholder.svg?height=300&width=300",
-      rating: 4.7,
-      reviews: 156,
-      badge: "Eco-Friendly",
-    },
-  ]
+async function getFeaturedProducts() {
+  try {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/products/featured`, {
+      cache: "no-store",
+    })
+    if (!res.ok) return []
+    return res.json()
+  } catch (error) {
+    console.error("Error fetching featured products:", error)
+    return []
+  }
+}
+
+export default async function HomePage() {
+  const featuredProducts = await getFeaturedProducts()
 
   const features = [
     {
@@ -85,18 +68,22 @@ export default function HomePage() {
               </div>
 
               <div className="flex flex-col sm:flex-row gap-4">
-                <Button size="lg" className="bg-white text-blue-600 hover:bg-gray-100">
-                  <Palette className="mr-2 h-5 w-5" />
-                  Start Designing
-                </Button>
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="border-white text-white hover:bg-white/10 bg-transparent"
-                >
-                  <ShoppingCart className="mr-2 h-5 w-5" />
-                  Browse Products
-                </Button>
+                <Link href="/design">
+                  <Button size="lg" className="bg-white text-blue-600 hover:bg-gray-100">
+                    <Palette className="mr-2 h-5 w-5" />
+                    Start Designing
+                  </Button>
+                </Link>
+                <Link href="/products">
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="border-white text-white hover:bg-white/10 bg-transparent"
+                  >
+                    <ShoppingCart className="mr-2 h-5 w-5" />
+                    Browse Products
+                  </Button>
+                </Link>
               </div>
 
               <div className="flex items-center gap-8 text-sm">
@@ -171,48 +158,8 @@ export default function HomePage() {
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {featuredProducts.map((product) => (
-              <Card key={product.id} className="group hover:shadow-xl transition-all duration-300 overflow-hidden">
-                <div className="relative">
-                  <Image
-                    src={product.image || "/placeholder.svg"}
-                    alt={product.name}
-                    width={300}
-                    height={300}
-                    className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                  <Badge className="absolute top-4 left-4 bg-red-500 text-white">{product.badge}</Badge>
-                  <Button
-                    size="sm"
-                    className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <ShoppingCart className="h-4 w-4" />
-                  </Button>
-                </div>
-                <CardContent className="p-6">
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">{product.name}</h3>
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="flex items-center">
-                      {[...Array(5)].map((_, i) => (
-                        <Star
-                          key={i}
-                          className={`h-4 w-4 ${
-                            i < Math.floor(product.rating) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
-                          }`}
-                        />
-                      ))}
-                    </div>
-                    <span className="text-sm text-gray-600">({product.reviews})</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="text-2xl font-bold text-gray-900">₹{product.price}</span>
-                      <span className="text-lg text-gray-500 line-through">₹{product.originalPrice}</span>
-                    </div>
-                    <Button size="sm">Add to Cart</Button>
-                  </div>
-                </CardContent>
-              </Card>
+            {featuredProducts.map((product: any) => (
+              <ProductCard key={product._id} product={product} />
             ))}
           </div>
         </div>
@@ -226,12 +173,16 @@ export default function HomePage() {
             Join thousands of creators who trust Draprly for their custom printing needs
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" className="bg-white text-blue-600 hover:bg-gray-100">
-              Get Started Free
-            </Button>
-            <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/10 bg-transparent">
-              Learn More
-            </Button>
+            <Link href="/auth/register">
+              <Button size="lg" className="bg-white text-blue-600 hover:bg-gray-100">
+                Get Started Free
+              </Button>
+            </Link>
+            <Link href="/about">
+              <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/10 bg-transparent">
+                Learn More
+              </Button>
+            </Link>
           </div>
         </div>
       </section>

@@ -4,16 +4,15 @@ import { Inter } from "next/font/google"
 import "./globals.css"
 import { Header } from "@/components/layout/header"
 import { Footer } from "@/components/layout/footer"
-import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "@/components/ui/toaster"
+import { CartProvider } from "@/contexts/cart-context"
+import { AuthProvider } from "@/contexts/auth-context"
 
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Draprly - Custom Print-on-Demand E-commerce Platform",
-  description:
-    "Transform your ideas into premium custom clothing and accessories. Design, print, and sell with our all-in-one e-commerce platform.",
-  keywords: "custom clothing, print on demand, e-commerce, design studio, marketplace",
+  title: "Draprly - Custom Print-on-Demand Platform",
+  description: "Create, customize, and sell premium custom clothing and accessories",
     generator: 'v0.dev'
 }
 
@@ -23,16 +22,16 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en">
       <body className={inter.className}>
-        <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
-          <div className="min-h-screen flex flex-col">
+        <AuthProvider>
+          <CartProvider>
             <Header />
-            <main className="flex-1">{children}</main>
+            <main className="min-h-screen">{children}</main>
             <Footer />
-          </div>
-          <Toaster />
-        </ThemeProvider>
+            <Toaster />
+          </CartProvider>
+        </AuthProvider>
       </body>
     </html>
   )
