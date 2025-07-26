@@ -7,7 +7,7 @@ import { authOptions } from "@/lib/auth"
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
-    if (!session || (session.user.role !== "admin" && session.user.role !== "seller")) {
+    if (!session || session.user.role !== "admin") {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
     }
 
@@ -47,42 +47,29 @@ export async function GET(request: NextRequest) {
     }
 
     const products = await Product.find(filter)
-      .populate("seller", "name email")
-      .select("name images category price stock sold views createdAt updatedAt")
-      .sort({ updatedAt: -1 })
+      .select("name sku stock reorderLevel maxStock price")
+      .sort({ name: 1 })
       .skip(skip)
       .limit(limit)
 
     const total = await Product.countDocuments(filter)
 
-    // Transform products to inventory items format
-    const items = products.map((product) => ({
+    const inventory = products.map((product) => ({
       _id: product._id,
-      product: {
-        _id: product._id,
-        name: product.name,
-        images: product.images,
-        category: product.category,
-        price: product.price,
-      },
-      stock: product.stock,
-      reserved: 0, // TODO: Calculate reserved stock from pending orders
-      available: product.stock,
-      lowStockThreshold: 10, // Default threshold
-      reorderPoint: 5, // Default reorder point
-      reorderQuantity: 50, // Default reorder quantity
-      createdAt: product.createdAt,
-      updatedAt: product.updatedAt,
+      productId: product._id,
+      productName: product.name,
+      sku: product.sku,
+      currentStock: product.stock,
+      reservedStock: 0, // This would come from pending orders
+      availableStock: product.stock,
+      reorderLevel: product.reorderLevel || 10,
+      maxStock: product.maxStock || 1000,
+      location: "Main Warehouse",
+      lastUpdated: product.updatedAt,
     }))
 
-    // Get low stock and out of stock items
-    const lowStockItems = items.filter((item) => item.stock <= item.lowStockThreshold && item.stock > 0)
-    const outOfStockItems = items.filter((item) => item.stock === 0)
-
     return NextResponse.json({
-      items,
-      lowStockItems,
-      outOfStockItems,
+      inventory,
       pagination: {
         page,
         limit,
@@ -117,10 +104,7 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
-    const updatedProduct = await Product.findByIdAndUpdate(productId, { stock }, { new: true }).populate(
-      "seller",
-      "name email",
-    )
+    const updatedProduct = await Product.findByIdAndUpdate(productId, { stock }, { new: true })
 
     return NextResponse.json(updatedProduct)
   } catch (error) {

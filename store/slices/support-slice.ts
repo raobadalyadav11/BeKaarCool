@@ -1,40 +1,23 @@
 import { createSlice, createAsyncThunk, type PayloadAction } from "@reduxjs/toolkit"
 
-interface SupportTicket {
+export interface SupportTicket {
   _id: string
   ticketNumber: string
-  user: {
-    _id: string
-    name: string
-    email: string
-    avatar?: string
-  }
+  userId: string
   subject: string
   description: string
-  category: string
-  priority: "low" | "medium" | "high" | "urgent"
   status: "open" | "in-progress" | "resolved" | "closed"
-  assignedTo?: {
-    _id: string
-    name: string
-    email: string
-  }
+  priority: "low" | "medium" | "high" | "urgent"
+  category: string
+  assignedTo?: string
   messages: Array<{
-    _id: string
-    sender: {
-      _id: string
-      name: string
-      role: string
-    }
+    sender: string
     message: string
-    attachments?: string[]
-    createdAt: string
+    timestamp: string
+    isAdmin: boolean
   }>
-  tags: string[]
   createdAt: string
   updatedAt: string
-  resolvedAt?: string
-  closedAt?: string
 }
 
 interface FAQ {
@@ -365,6 +348,9 @@ const supportSlice = createSlice({
     clearError: (state) => {
       state.error = null
     },
+    setCurrentTicket: (state, action) => {
+      state.currentTicket = action.payload
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -438,6 +424,6 @@ const supportSlice = createSlice({
   },
 })
 
-export const { setFilters, setPagination, clearCurrentTicket, clearCurrentChatSession, clearError } =
+export const { setFilters, setPagination, clearCurrentTicket, clearCurrentChatSession, clearError, setCurrentTicket } =
   supportSlice.actions
 export default supportSlice.reducer

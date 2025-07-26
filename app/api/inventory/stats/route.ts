@@ -1,52 +1,33 @@
-import { type NextRequest, NextResponse } from "next/server"
-import { connectDB } from "@/lib/mongodb"
-import { Product } from "@/models/Product"
+import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
+import { connectDB } from "@/lib/mongodb"
+import { Product } from "@/models/Product"
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const session = await getServerSession(authOptions)
-    if (!session || (session.user.role !== "admin" && session.user.role !== "seller")) {
+    if (!session || session.user.role !== "admin") {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
     }
 
     await connectDB()
 
-    const filter: any = {}
+    const totalProducts = await Product.countDocuments({})
+    const lowStockItems = await Product.countDocuments({ stock: { $lte: 10 } })
+    const outOfStockItems = await Product.countDocuments({ stock: 0 })
 
-    // If seller, only show their products
-    if (session.user.role === "seller") {
-      filter.seller = session.user.id
-    }
+    const products = await Product.find({}).select("price stock")
+    const totalValue = products.reduce((sum, product) => sum + product.price * product.stock, 0)
 
-    const stats = await Product.aggregate([
-      { $match: filter },
-      {
-        $group: {
-          _id: null,
-          totalProducts: { $sum: 1 },
-          lowStockCount: {
-            $sum: { $cond: [{ $and: [{ $lte: ["$stock", 10] }, { $gt: ["$stock", 0] }] }, 1, 0] },
-          },
-          outOfStockCount: {
-            $sum: { $cond: [{ $eq: ["$stock", 0] }, 1, 0] },
-          },
-          totalValue: { $sum: { $multiply: ["$price", "$stock"] } },
-        },
-      },
-    ])
-
-    return NextResponse.json(
-      stats[0] || {
-        totalProducts: 0,
-        lowStockCount: 0,
-        outOfStockCount: 0,
-        totalValue: 0,
-      },
-    )
+    return NextResponse.json({
+      totalProducts,
+      lowStockItems,
+      outOfStockItems,
+      totalValue,
+    })
   } catch (error) {
     console.error("Error fetching inventory stats:", error)
-    return NextResponse.json({ message: "Failed to fetch inventory stats" }, { status: 500 })
+    return NextResponse.json({ message: "Internal server error" }, { status: 500 })
   }
 }

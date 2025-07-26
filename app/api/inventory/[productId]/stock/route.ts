@@ -1,83 +1,52 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { connectDB } from "@/lib/mongodb"
-import { Product } from "@/models/Product"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
+import { connectDB } from "@/lib/mongodb"
+import { Product } from "@/models/Product"
 
 export async function PUT(request: NextRequest, { params }: { params: { productId: string } }) {
   try {
     const session = await getServerSession(authOptions)
-    if (!session || (session.user.role !== "admin" && session.user.role !== "seller")) {
+    if (!session || session.user.role !== "admin") {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
     }
 
     await connectDB()
-
-    const { quantity, type, reason, reference } = await request.json()
+    const { quantity, type } = await request.json()
 
     const product = await Product.findById(params.productId)
-
     if (!product) {
       return NextResponse.json({ message: "Product not found" }, { status: 404 })
     }
 
-    // Check if seller owns the product
-    if (session.user.role === "seller" && product.seller.toString() !== session.user.id) {
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
-    }
-
     let newStock = product.stock
-
-    switch (type) {
-      case "in":
-        newStock += quantity
-        break
-      case "out":
-        newStock = Math.max(0, newStock - quantity)
-        break
-      case "adjustment":
-        newStock = quantity
-        break
-      default:
-        return NextResponse.json({ message: "Invalid stock movement type" }, { status: 400 })
+    if (type === "add") {
+      newStock += quantity
+    } else if (type === "remove") {
+      newStock = Math.max(0, newStock - quantity)
     }
 
-    product.stock = newStock
-    product.updatedAt = new Date()
-    await product.save()
-
-    // TODO: Create stock movement record
-    // const stockMovement = new StockMovement({
-    //   product: params.productId,
-    //   type,
-    //   quantity,
-    //   reason,
-    //   reference,
-    //   user: session.user.id,
-    //   previousStock: product.stock,
-    //   newStock,
-    // })
-    // await stockMovement.save()
+    const updatedProduct = await Product.findByIdAndUpdate(
+      params.productId,
+      { stock: newStock, updatedAt: new Date() },
+      { new: true },
+    )
 
     return NextResponse.json({
-      _id: product._id,
-      product: {
-        _id: product._id,
-        name: product.name,
-        images: product.images,
-        category: product.category,
-        price: product.price,
-      },
-      stock: product.stock,
-      reserved: 0,
-      available: product.stock,
-      lowStockThreshold: 10,
-      reorderPoint: 5,
-      reorderQuantity: 50,
-      updatedAt: product.updatedAt,
+      _id: updatedProduct._id,
+      productId: updatedProduct._id,
+      productName: updatedProduct.name,
+      sku: updatedProduct.sku,
+      currentStock: updatedProduct.stock,
+      reservedStock: 0,
+      availableStock: updatedProduct.stock,
+      reorderLevel: updatedProduct.reorderLevel || 10,
+      maxStock: updatedProduct.maxStock || 1000,
+      location: "Main Warehouse",
+      lastUpdated: updatedProduct.updatedAt,
     })
   } catch (error) {
     console.error("Error updating stock:", error)
-    return NextResponse.json({ message: "Failed to update stock" }, { status: 500 })
+    return NextResponse.json({ message: "Internal server error" }, { status: 500 })
   }
 }

@@ -15,9 +15,6 @@ interface Coupon {
   isActive: boolean
   applicableCategories: string[]
   applicableProducts: string[]
-  createdBy: string
-  createdAt: string
-  updatedAt: string
 }
 
 interface Campaign {
@@ -124,25 +121,15 @@ const initialState: MarketingState = {
 }
 
 // Async thunks
-export const fetchCoupons = createAsyncThunk(
-  "marketing/fetchCoupons",
-  async (params: { page?: number; limit?: number; status?: string }) => {
-    const searchParams = new URLSearchParams({
-      page: (params.page || 1).toString(),
-      limit: (params.limit || 10).toString(),
-    })
-
-    if (params.status && params.status !== "all") {
-      searchParams.append("status", params.status)
-    }
-
-    const response = await fetch(`/api/marketing/coupons?${searchParams}`)
-    if (!response.ok) {
-      throw new Error("Failed to fetch coupons")
-    }
-    return response.json()
-  },
-)
+export const fetchCoupons = createAsyncThunk("marketing/fetchCoupons", async (_, { rejectWithValue }) => {
+  try {
+    const response = await fetch("/api/marketing/coupons")
+    if (!response.ok) throw new Error("Failed to fetch coupons")
+    return await response.json()
+  } catch (error: any) {
+    return rejectWithValue(error.message)
+  }
+})
 
 export const createCoupon = createAsyncThunk("marketing/createCoupon", async (couponData: Partial<Coupon>) => {
   const response = await fetch("/api/marketing/coupons", {
@@ -276,6 +263,20 @@ export const fetchMarketingStats = createAsyncThunk("marketing/fetchStats", asyn
   return response.json()
 })
 
+export const applyCoupon = createAsyncThunk("marketing/applyCoupon", async (code: string, { rejectWithValue }) => {
+  try {
+    const response = await fetch("/api/cart/coupon", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code }),
+    })
+    if (!response.ok) throw new Error("Invalid coupon code")
+    return await response.json()
+  } catch (error: any) {
+    return rejectWithValue(error.message)
+  }
+})
+
 const marketingSlice = createSlice({
   name: "marketing",
   initialState,
@@ -303,7 +304,7 @@ const marketingSlice = createSlice({
       })
       .addCase(fetchCoupons.rejected, (state, action) => {
         state.loading = false
-        state.error = action.error.message || "Failed to fetch coupons"
+        state.error = action.payload as string
       })
       // Create coupon
       .addCase(createCoupon.fulfilled, (state, action) => {
@@ -339,6 +340,18 @@ const marketingSlice = createSlice({
       // Fetch stats
       .addCase(fetchMarketingStats.fulfilled, (state, action) => {
         state.stats = action.payload
+      })
+      // Apply coupon
+      .addCase(applyCoupon.pending, (state) => {
+        state.loading = true
+        state.error = null
+      })
+      .addCase(applyCoupon.fulfilled, (state, action) => {
+        state.loading = false
+      })
+      .addCase(applyCoupon.rejected, (state, action) => {
+        state.loading = false
+        state.error = action.payload as string
       })
   },
 })
