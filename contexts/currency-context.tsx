@@ -3,53 +3,53 @@
 import type React from "react"
 import { createContext, useContext, useState, useEffect } from "react"
 
+interface Currency {
+  code: string
+  symbol: string
+  rate: number
+}
+
 interface CurrencyContextType {
-  currency: string
-  setCurrency: (currency: string) => void
+  currency: Currency
+  setCurrency: (currency: Currency) => void
   formatPrice: (price: number) => string
   convertPrice: (price: number) => number
 }
 
+const currencies: Currency[] = [
+  { code: "INR", symbol: "₹", rate: 1 },
+  { code: "USD", symbol: "$", rate: 0.012 },
+  { code: "EUR", symbol: "€", rate: 0.011 },
+  { code: "GBP", symbol: "£", rate: 0.0095 },
+]
+
 const CurrencyContext = createContext<CurrencyContextType | undefined>(undefined)
 
-const exchangeRates = {
-  INR: 1,
-  USD: 0.012,
-  EUR: 0.011,
-  GBP: 0.0095,
-}
-
-const currencySymbols = {
-  INR: "₹",
-  USD: "$",
-  EUR: "€",
-  GBP: "£",
-}
-
 export function CurrencyProvider({ children }: { children: React.ReactNode }) {
-  const [currency, setCurrency] = useState("INR")
+  const [currency, setCurrency] = useState<Currency>(currencies[0])
 
   useEffect(() => {
     const savedCurrency = localStorage.getItem("currency")
     if (savedCurrency) {
-      setCurrency(savedCurrency)
+      const found = currencies.find((c) => c.code === savedCurrency)
+      if (found) {
+        setCurrency(found)
+      }
     }
   }, [])
 
-  const handleSetCurrency = (newCurrency: string) => {
+  const handleSetCurrency = (newCurrency: Currency) => {
     setCurrency(newCurrency)
-    localStorage.setItem("currency", newCurrency)
+    localStorage.setItem("currency", newCurrency.code)
   }
 
   const convertPrice = (price: number): number => {
-    const rate = exchangeRates[currency as keyof typeof exchangeRates]
-    return Math.round(price * rate * 100) / 100
+    return price * currency.rate
   }
 
   const formatPrice = (price: number): string => {
     const convertedPrice = convertPrice(price)
-    const symbol = currencySymbols[currency as keyof typeof currencySymbols]
-    return `${symbol}${convertedPrice.toLocaleString()}`
+    return `${currency.symbol}${convertedPrice.toFixed(2)}`
   }
 
   return (

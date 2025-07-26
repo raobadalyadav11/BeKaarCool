@@ -2,89 +2,67 @@
 
 import type React from "react"
 import { createContext, useContext, useState, useEffect } from "react"
-import { useSession } from "next-auth/react"
 
 interface Message {
   id: string
   text: string
   sender: "user" | "support"
   timestamp: Date
-  attachments?: string[]
 }
 
 interface ChatContextType {
   isOpen: boolean
   setIsOpen: (open: boolean) => void
   messages: Message[]
-  sendMessage: (text: string, attachments?: string[]) => void
-  isTyping: boolean
+  addMessage: (message: Omit<Message, "id" | "timestamp">) => void
+  isOnline: boolean
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined)
 
 export function ChatProvider({ children }: { children: React.ReactNode }) {
-  const { data: session } = useSession()
   const [isOpen, setIsOpen] = useState(false)
   const [messages, setMessages] = useState<Message[]>([])
-  const [isTyping, setIsTyping] = useState(false)
+  const [isOnline, setIsOnline] = useState(true)
 
   useEffect(() => {
-    if (session?.user) {
-      // Load chat history
-      loadChatHistory()
+    // Simulate support availability
+    const checkOnlineStatus = () => {
+      const now = new Date()
+      const hour = now.getHours()
+      setIsOnline(hour >= 9 && hour <= 18) // 9 AM to 6 PM
     }
-  }, [session])
 
-  const loadChatHistory = async () => {
-    try {
-      const response = await fetch("/api/support/chat/history")
-      const data = await response.json()
-      setMessages(data.messages || [])
-    } catch (error) {
-      console.error("Error loading chat history:", error)
-    }
-  }
+    checkOnlineStatus()
+    const interval = setInterval(checkOnlineStatus, 60000) // Check every minute
 
-  const sendMessage = async (text: string, attachments?: string[]) => {
+    return () => clearInterval(interval)
+  }, [])
+
+  const addMessage = (message: Omit<Message, "id" | "timestamp">) => {
     const newMessage: Message = {
+      ...message,
       id: Date.now().toString(),
-      text,
-      sender: "user",
       timestamp: new Date(),
-      attachments,
     }
-
     setMessages((prev) => [...prev, newMessage])
 
-    try {
-      const response = await fetch("/api/support/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: text, attachments }),
-      })
-
-      if (response.ok) {
-        // Simulate typing indicator
-        setIsTyping(true)
-        setTimeout(() => {
-          setIsTyping(false)
-          // Add auto-response (in real app, this would come from WebSocket)
-          const autoResponse: Message = {
-            id: (Date.now() + 1).toString(),
-            text: "Thank you for your message. Our support team will get back to you shortly.",
-            sender: "support",
-            timestamp: new Date(),
-          }
-          setMessages((prev) => [...prev, autoResponse])
-        }, 2000)
-      }
-    } catch (error) {
-      console.error("Error sending message:", error)
+    // Auto-reply for demo purposes
+    if (message.sender === "user") {
+      setTimeout(() => {
+        const autoReply: Message = {
+          id: (Date.now() + 1).toString(),
+          text: "Thank you for your message. A support representative will be with you shortly.",
+          sender: "support",
+          timestamp: new Date(),
+        }
+        setMessages((prev) => [...prev, autoReply])
+      }, 1000)
     }
   }
 
   return (
-    <ChatContext.Provider value={{ isOpen, setIsOpen, messages, sendMessage, isTyping }}>
+    <ChatContext.Provider value={{ isOpen, setIsOpen, messages, addMessage, isOnline }}>
       {children}
     </ChatContext.Provider>
   )

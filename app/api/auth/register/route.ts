@@ -11,10 +11,19 @@ export async function POST(request: NextRequest) {
 
     const { name, email, password, role = "customer" } = await request.json()
 
+    if (!name || !email || !password) {
+      return NextResponse.json({ message: "All fields are required" }, { status: 400 })
+    }
+
     // Check if user already exists
     const existingUser = await User.findOne({ email })
     if (existingUser) {
-      return NextResponse.json({ error: "User already exists" }, { status: 400 })
+      return NextResponse.json({ message: "User already exists" }, { status: 400 })
+    }
+
+    // Validate password strength
+    if (password.length < 6) {
+      return NextResponse.json({ message: "Password must be at least 6 characters long" }, { status: 400 })
     }
 
     // Hash password
@@ -31,13 +40,19 @@ export async function POST(request: NextRequest) {
         currency: "INR",
         newsletter: true,
         notifications: true,
+        theme: "light",
       },
+      isVerified: false,
     })
 
     await user.save()
 
     // Send welcome email
-    await sendWelcomeEmail(user.email, user.name)
+    try {
+      await sendWelcomeEmail(user.email, user.name)
+    } catch (emailError) {
+      console.error("Welcome email error:", emailError)
+    }
 
     const token = jwt.sign({ userId: user._id, email: user.email, role: user.role }, process.env.JWT_SECRET!, {
       expiresIn: "7d",
@@ -49,6 +64,7 @@ export async function POST(request: NextRequest) {
       {
         user: userWithoutPassword,
         token,
+        message: "Registration successful",
       },
       { status: 201 },
     )
@@ -63,6 +79,6 @@ export async function POST(request: NextRequest) {
     return response
   } catch (error) {
     console.error("Registration error:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    return NextResponse.json({ message: "Internal server error" }, { status: 500 })
   }
 }

@@ -1,152 +1,90 @@
 import mongoose from "mongoose"
 
-const addressSchema = new mongoose.Schema({
-  type: {
+const userSchema = new mongoose.Schema({
+  name: {
     type: String,
-    enum: ["home", "work", "other"],
-    default: "home",
+    required: true,
+    trim: true,
   },
-  name: String,
-  phone: String,
-  street: String,
-  city: String,
-  state: String,
-  zipCode: String,
-  country: {
+  email: {
     type: String,
-    default: "India",
+    required: true,
+    unique: true,
+    lowercase: true,
+    trim: true,
   },
-  isDefault: {
-    type: Boolean,
-    default: false,
+  password: {
+    type: String,
+    required: true,
+    select: false,
   },
-})
-
-const userSchema = new mongoose.Schema(
-  {
-    name: {
+  role: {
+    type: String,
+    enum: ["customer", "seller", "admin"],
+    default: "customer",
+  },
+  avatar: {
+    type: String,
+    default: "",
+  },
+  phone: {
+    type: String,
+    default: "",
+  },
+  address: {
+    street: String,
+    city: String,
+    state: String,
+    zipCode: String,
+    country: String,
+  },
+  preferences: {
+    language: {
       type: String,
-      required: true,
-      trim: true,
+      default: "en",
     },
-    email: {
+    currency: {
       type: String,
-      required: true,
-      unique: true,
-      lowercase: true,
-      trim: true,
+      default: "INR",
     },
-    password: {
-      type: String,
-      required: true,
-      minlength: 6,
-      select: false,
-    },
-    role: {
-      type: String,
-      enum: ["customer", "seller", "admin"],
-      default: "customer",
-    },
-    avatar: {
-      type: String,
-      default: "",
-    },
-    phone: {
-      type: String,
-      default: "",
-    },
-    addresses: [addressSchema],
-    dateOfBirth: Date,
-    gender: {
-      type: String,
-      enum: ["male", "female", "other"],
-    },
-    isVerified: {
-      type: Boolean,
-      default: false,
-    },
-    isActive: {
+    newsletter: {
       type: Boolean,
       default: true,
     },
-    lastLogin: {
-      type: Date,
-      default: Date.now,
+    notifications: {
+      type: Boolean,
+      default: true,
     },
-    preferences: {
-      language: {
-        type: String,
-        default: "en",
-      },
-      currency: {
-        type: String,
-        default: "INR",
-      },
-      newsletter: {
-        type: Boolean,
-        default: true,
-      },
-      notifications: {
-        email: {
-          type: Boolean,
-          default: true,
-        },
-        sms: {
-          type: Boolean,
-          default: false,
-        },
-        push: {
-          type: Boolean,
-          default: true,
-        },
-      },
-      theme: {
-        type: String,
-        enum: ["light", "dark", "system"],
-        default: "system",
-      },
-    },
-    socialLinks: {
-      facebook: String,
-      instagram: String,
-      twitter: String,
-      linkedin: String,
-    },
-    resetToken: String,
-    resetTokenExpiry: Date,
-    verificationToken: String,
-    verificationTokenExpiry: Date,
-    // Seller specific fields
-    businessInfo: {
-      businessName: String,
-      businessType: String,
-      gstNumber: String,
-      panNumber: String,
-      businessAddress: addressSchema,
-      bankDetails: {
-        accountNumber: String,
-        ifscCode: String,
-        accountHolderName: String,
-        bankName: String,
-      },
-    },
-    sellerStatus: {
+    theme: {
       type: String,
-      enum: ["pending", "approved", "rejected", "suspended"],
-      default: "pending",
-    },
-    commission: {
-      type: Number,
-      default: 10, // 10% commission
+      default: "light",
     },
   },
-  {
-    timestamps: true,
+  isVerified: {
+    type: Boolean,
+    default: false,
   },
-)
+  verificationToken: String,
+  resetToken: String,
+  resetTokenExpiry: Date,
+  lastLogin: Date,
+  affiliateCode: String,
+  affiliateEarnings: {
+    type: Number,
+    default: 0,
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+  updatedAt: {
+    type: Date,
+    default: Date.now,
+  },
+})
 
 userSchema.index({ email: 1 })
 userSchema.index({ role: 1 })
-userSchema.index({ isActive: 1 })
+userSchema.index({ affiliateCode: 1 })
 
 export const User = mongoose.models.User || mongoose.model("User", userSchema)

@@ -10,7 +10,11 @@ interface CartItem {
   quantity: number
   size: string
   color: string
-  customization?: any
+  customization?: {
+    design?: string
+    text?: string
+    position?: { x: number; y: number }
+  }
   seller: {
     id: string
     name: string
@@ -60,7 +64,10 @@ export const addToCart = createAsyncThunk(
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(item),
     })
-    if (!response.ok) throw new Error("Failed to add to cart")
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.message || "Failed to add to cart")
+    }
     return response.json()
   },
 )
@@ -92,7 +99,10 @@ export const applyCoupon = createAsyncThunk("cart/applyCoupon", async (couponCod
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ couponCode }),
   })
-  if (!response.ok) throw new Error("Invalid coupon code")
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(error.message || "Invalid coupon code")
+  }
   return response.json()
 })
 
@@ -116,10 +126,18 @@ const cartSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
+      .addCase(fetchCart.pending, (state) => {
+        state.loading = true
+      })
       .addCase(fetchCart.fulfilled, (state, action) => {
+        state.loading = false
         state.items = action.payload.items
         state.couponCode = action.payload.couponCode
         state.discount = action.payload.discount
+      })
+      .addCase(fetchCart.rejected, (state, action) => {
+        state.loading = false
+        state.error = action.error.message || "Failed to fetch cart"
       })
       .addCase(addToCart.fulfilled, (state, action) => {
         state.items = action.payload.items

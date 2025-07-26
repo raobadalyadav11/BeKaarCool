@@ -57,6 +57,7 @@
     "next-auth": "latest",
     "next-themes": "latest",
     "nodemailer": "latest",
+    "qrcode": "latest",
     "razorpay": "latest",
     "react": "^19",
     "react-day-picker": "latest",

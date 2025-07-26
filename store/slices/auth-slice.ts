@@ -7,13 +7,22 @@ interface User {
   role: "customer" | "seller" | "admin"
   avatar?: string
   phone?: string
-  address?: any
+  address?: {
+    street: string
+    city: string
+    state: string
+    zipCode: string
+    country: string
+  }
   preferences: {
     language: string
     currency: string
     newsletter: boolean
     notifications: boolean
+    theme: string
   }
+  isVerified: boolean
+  lastLogin?: Date
 }
 
 interface AuthState {
@@ -21,6 +30,7 @@ interface AuthState {
   isAuthenticated: boolean
   loading: boolean
   error: string | null
+  resetToken: string | null
 }
 
 const initialState: AuthState = {
@@ -28,6 +38,7 @@ const initialState: AuthState = {
   isAuthenticated: false,
   loading: false,
   error: null,
+  resetToken: null,
 }
 
 export const loginUser = createAsyncThunk(
@@ -40,7 +51,8 @@ export const loginUser = createAsyncThunk(
     })
 
     if (!response.ok) {
-      throw new Error("Login failed")
+      const error = await response.json()
+      throw new Error(error.message || "Login failed")
     }
 
     return response.json()
@@ -57,7 +69,8 @@ export const registerUser = createAsyncThunk(
     })
 
     if (!response.ok) {
-      throw new Error("Registration failed")
+      const error = await response.json()
+      throw new Error(error.message || "Registration failed")
     }
 
     return response.json()
@@ -72,7 +85,8 @@ export const updateProfile = createAsyncThunk("auth/updateProfile", async (userD
   })
 
   if (!response.ok) {
-    throw new Error("Profile update failed")
+    const error = await response.json()
+    throw new Error(error.message || "Profile update failed")
   }
 
   return response.json()
@@ -86,11 +100,30 @@ export const resetPassword = createAsyncThunk("auth/resetPassword", async ({ ema
   })
 
   if (!response.ok) {
-    throw new Error("Password reset failed")
+    const error = await response.json()
+    throw new Error(error.message || "Password reset failed")
   }
 
   return response.json()
 })
+
+export const verifyResetToken = createAsyncThunk(
+  "auth/verifyResetToken",
+  async ({ token, password }: { token: string; password: string }) => {
+    const response = await fetch("/api/auth/reset-password/verify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token, password }),
+    })
+
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.message || "Password reset verification failed")
+    }
+
+    return response.json()
+  },
+)
 
 const authSlice = createSlice({
   name: "auth",
@@ -139,6 +172,9 @@ const authSlice = createSlice({
       })
       .addCase(updateProfile.fulfilled, (state, action) => {
         state.user = { ...state.user, ...action.payload.user }
+      })
+      .addCase(resetPassword.fulfilled, (state, action) => {
+        state.resetToken = action.payload.token
       })
   },
 })

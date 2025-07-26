@@ -18,24 +18,29 @@ export const authOptions: NextAuthOptions = {
           return null
         }
 
-        await connectDB()
+        try {
+          await connectDB()
 
-        const user = await User.findOne({ email: credentials.email })
-        if (!user) {
+          const user = await User.findOne({ email: credentials.email }).select("+password")
+          if (!user) {
+            return null
+          }
+
+          const isPasswordValid = await bcrypt.compare(credentials.password, user.password)
+          if (!isPasswordValid) {
+            return null
+          }
+
+          return {
+            id: user._id.toString(),
+            email: user.email,
+            name: user.name,
+            role: user.role,
+            avatar: user.avatar,
+          }
+        } catch (error) {
+          console.error("Auth error:", error)
           return null
-        }
-
-        const isPasswordValid = await bcrypt.compare(credentials.password, user.password)
-        if (!isPasswordValid) {
-          return null
-        }
-
-        return {
-          id: user._id.toString(),
-          email: user.email,
-          name: user.name,
-          role: user.role,
-          avatar: user.avatar,
         }
       },
     }),
@@ -44,10 +49,37 @@ export const authOptions: NextAuthOptions = {
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     }),
   ],
-  session: {
-    strategy: "jwt",
-  },
   callbacks: {
+    async signIn({ user, account, profile }) {
+      if (account?.provider === "google") {
+        try {
+          await connectDB()
+
+          const existingUser = await User.findOne({ email: user.email })
+          if (!existingUser) {
+            await User.create({
+              name: user.name,
+              email: user.email,
+              avatar: user.image,
+              role: "customer",
+              isVerified: true,
+              preferences: {
+                language: "en",
+                currency: "INR",
+                newsletter: true,
+                notifications: true,
+                theme: "light",
+              },
+            })
+          }
+          return true
+        } catch (error) {
+          console.error("Google sign in error:", error)
+          return false
+        }
+      }
+      return true
+    },
     async jwt({ token, user }) {
       if (user) {
         token.role = user.role
@@ -62,26 +94,13 @@ export const authOptions: NextAuthOptions = {
       }
       return session
     },
-    async signIn({ user, account, profile }) {
-      if (account?.provider === "google") {
-        await connectDB()
-
-        const existingUser = await User.findOne({ email: user.email })
-        if (!existingUser) {
-          await User.create({
-            name: user.name,
-            email: user.email,
-            avatar: user.image,
-            role: "customer",
-            isVerified: true,
-          })
-        }
-      }
-      return true
-    },
   },
   pages: {
     signIn: "/auth/login",
     signUp: "/auth/register",
   },
+  session: {
+    strategy: "jwt",
+  },
+  secret: process.env.NEXTAUTH_SECRET,
 }

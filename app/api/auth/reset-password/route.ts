@@ -10,9 +10,13 @@ export async function POST(request: NextRequest) {
 
     const { email } = await request.json()
 
+    if (!email) {
+      return NextResponse.json({ message: "Email is required" }, { status: 400 })
+    }
+
     const user = await User.findOne({ email })
     if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 })
+      return NextResponse.json({ message: "User not found" }, { status: 404 })
     }
 
     // Generate reset token
@@ -26,11 +30,19 @@ export async function POST(request: NextRequest) {
     })
 
     // Send reset email
-    await sendPasswordResetEmail(user.email, user.name, resetToken)
+    try {
+      await sendPasswordResetEmail(user.email, user.name, resetToken)
+    } catch (emailError) {
+      console.error("Password reset email error:", emailError)
+      return NextResponse.json({ message: "Failed to send reset email" }, { status: 500 })
+    }
 
-    return NextResponse.json({ message: "Password reset email sent" })
+    return NextResponse.json({
+      message: "Password reset email sent successfully",
+      token: resetToken, // Only for development, remove in production
+    })
   } catch (error) {
     console.error("Password reset error:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    return NextResponse.json({ message: "Internal server error" }, { status: 500 })
   }
 }

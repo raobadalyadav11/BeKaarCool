@@ -12,16 +12,16 @@ interface MongooseCache {
 }
 
 declare global {
-  var mongooseCache: MongooseCache
+  var myMongoose: MongooseCache | undefined
 }
 
-let cached = global.mongooseCache
+const cached: MongooseCache = global.myMongoose || { conn: null, promise: null }
 
-if (!cached) {
-  cached = global.mongooseCache = { conn: null, promise: null }
+if (!global.myMongoose) {
+  global.myMongoose = cached
 }
 
-export async function connectDB() {
+export async function connectDB(): Promise<typeof mongoose> {
   if (cached.conn) {
     return cached.conn
   }
@@ -32,6 +32,7 @@ export async function connectDB() {
     }
 
     cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongoose) => {
+      console.log("Connected to MongoDB")
       return mongoose
     })
   }
