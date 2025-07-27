@@ -1,12 +1,20 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { connectDB } from "@/lib/mongodb"
 import { Product } from "@/models/Product"
+import { Review } from "@/models/Review"
+import { User } from "@/models/User"
+import { Order } from "@/models/Order"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     await connectDB()
+    
+    // Ensure models are registered
+    Review
+    User
+    Order
 
     const product = await Product.findById(params.id)
       .populate("seller", "name email avatar phone")

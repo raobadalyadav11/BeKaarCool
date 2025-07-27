@@ -1,14 +1,27 @@
-const { MongoClient } = require("mongodb")
-const bcrypt = require("bcryptjs")
+import bcrypt from "bcryptjs";
+import { connectDB } from "@/lib/mongodb";
+import { User } from "@/models/User";
+import { Product } from "@/models/Product";
+import { Coupon } from "@/models/Coupon";
+import { Order } from "@/models/Order";
+import { Review } from "@/models/Review";
 
-const MONGODB_URI = process.env.MONGODB_URI || "mongodb://localhost:27017/draprly"
+// Helper function to generate slug from product name
+function generateSlug(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '') // Remove special characters
+    .replace(/\s+/g, '-') // Replace spaces with hyphens
+    .replace(/-+/g, '-') // Replace multiple hyphens with single hyphen
+    .trim();
+}
 
 const seedData = {
   users: [
     {
       name: "Admin User",
       email: "admin@draprly.com",
-      password: await bcrypt.hash("admin123", 12),
+      password: bcrypt.hashSync("admin123", 12), // Fixed: Use hashSync for synchronous hashing
       role: "admin",
       isVerified: true,
       isActive: true,
@@ -26,7 +39,7 @@ const seedData = {
     {
       name: "John Doe",
       email: "john@example.com",
-      password: await bcrypt.hash("password123", 12),
+      password: bcrypt.hashSync("password123", 12), // Fixed: Use hashSync
       role: "customer",
       isVerified: true,
       isActive: true,
@@ -57,7 +70,7 @@ const seedData = {
     {
       name: "Jane Smith",
       email: "jane@example.com",
-      password: await bcrypt.hash("password123", 12),
+      password: bcrypt.hashSync("password123", 12), // Fixed: Use hashSync
       role: "seller",
       isVerified: true,
       isActive: true,
@@ -84,10 +97,10 @@ const seedData = {
       updatedAt: new Date(),
     },
   ],
-
   products: [
     {
       name: "Wireless Bluetooth Headphones",
+      slug: "wireless-bluetooth-headphones",
       description: "Premium quality wireless headphones with noise cancellation and 30-hour battery life.",
       price: 2999,
       originalPrice: 3999,
@@ -124,6 +137,7 @@ const seedData = {
     },
     {
       name: "Smartphone Case - Clear",
+      slug: "smartphone-case-clear",
       description: "Crystal clear protective case for smartphones with drop protection.",
       price: 299,
       originalPrice: 499,
@@ -154,6 +168,7 @@ const seedData = {
     },
     {
       name: "Cotton T-Shirt - Navy Blue",
+      slug: "cotton-t-shirt-navy-blue",
       description: "Comfortable 100% cotton t-shirt perfect for casual wear.",
       price: 599,
       originalPrice: 799,
@@ -190,6 +205,7 @@ const seedData = {
     },
     {
       name: "Stainless Steel Water Bottle",
+      slug: "stainless-steel-water-bottle",
       description: "Insulated stainless steel water bottle that keeps drinks cold for 24 hours.",
       price: 899,
       originalPrice: 1199,
@@ -220,6 +236,7 @@ const seedData = {
     },
     {
       name: "Yoga Mat - Premium",
+      slug: "yoga-mat-premium",
       description: "Non-slip yoga mat made from eco-friendly materials, perfect for all yoga practices.",
       price: 1299,
       originalPrice: 1699,
@@ -249,7 +266,6 @@ const seedData = {
       updatedAt: new Date(),
     },
   ],
-
   coupons: [
     {
       code: "WELCOME20",
@@ -302,7 +318,6 @@ const seedData = {
       updatedAt: new Date(),
     },
   ],
-
   orders: [
     {
       orderNumber: "DR2024001",
@@ -368,7 +383,6 @@ const seedData = {
       updatedAt: new Date(),
     },
   ],
-
   reviews: [
     {
       productId: null, // Will be set after product creation
@@ -394,72 +408,103 @@ const seedData = {
       updatedAt: new Date(),
     },
   ],
-}
+};
 
 async function seedDatabase() {
-  const client = new MongoClient(MONGODB_URI)
-
   try {
-    await client.connect()
-    console.log("Connected to MongoDB")
-
-    const db = client.db()
+    await connectDB();
 
     // Clear existing data
-    console.log("Clearing existing data...")
-    await db.collection("users").deleteMany({})
-    await db.collection("products").deleteMany({})
-    await db.collection("coupons").deleteMany({})
-    await db.collection("orders").deleteMany({})
-    await db.collection("reviews").deleteMany({})
+    console.log("Clearing existing data...");
+    await User.deleteMany({});
+    await Product.deleteMany({});
+    await Coupon.deleteMany({});
+    await Order.deleteMany({});
+    await Review.deleteMany({});
 
     // Insert users
-    console.log("Inserting users...")
-    const userResult = await db.collection("users").insertMany(seedData.users)
-    const userIds = Object.values(userResult.insertedIds)
+    console.log("Inserting users...");
+    const userResult = await User.insertMany(seedData.users);
+    const userMap = new Map(userResult.map(user => [user.email, user._id]));
 
-    // Insert products
-    console.log("Inserting products...")
-    const productResult = await db.collection("products").insertMany(seedData.products)
-    const productIds = Object.values(productResult.insertedIds)
+    // Insert products with seller assigned
+    console.log("Inserting products...");
+    const sellerId = userMap.get("jane@example.com"); // Jane Smith is the seller
+    const productsWithSeller = seedData.products.map(product => ({
+      ...product,
+      seller: sellerId,
+    }));
+    const productResult = await Product.insertMany(productsWithSeller);
+    const productMap = new Map(productResult.map(product => [product.name, product._id]));
 
-    // Insert coupons
-    console.log("Inserting coupons...")
-    await db.collection("coupons").insertMany(seedData.coupons)
+    // Update orders with user and product references
+    console.log("Updating orders...");
+    const johnUserId = userMap.get("john@example.com");
+    const updatedOrders = seedData.orders.map(order => {
+      const subtotal = order.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+      const shipping = 99; // Fixed shipping cost
+      const total = subtotal + shipping;
+      
+      return {
+        orderNumber: order.orderNumber,
+        user: johnUserId, // Changed from userId to user
+        subtotal: subtotal, // Added required subtotal
+        total: total, // Changed from totalAmount to total
+        shipping: shipping, // Added shipping cost
+        paymentStatus: order.paymentStatus === "paid" ? "completed" : order.paymentStatus, // Fix enum value
+        paymentMethod: order.paymentMethod,
+        status: order.status,
+        trackingNumber: order.trackingNumber,
+        shippingAddress: order.shippingAddress,
+        createdAt: order.createdAt,
+        updatedAt: order.updatedAt,
+        items: order.items.map(item => ({
+          product: productMap.get(item.name), // Changed from productId to product
+          quantity: item.quantity,
+          price: item.price,
+          seller: sellerId, // Added required seller field
+        })),
+      };
+    });
+    const orderResult = await Order.insertMany(updatedOrders);
 
-    // Update orders with user and product IDs
-    seedData.orders[0].userId = userIds[1] // John Doe
-    seedData.orders[0].items[0].productId = productIds[0] // Headphones
-    seedData.orders[1].userId = userIds[1] // John Doe
-    seedData.orders[1].items[0].productId = productIds[1] // Phone Case
-    seedData.orders[1].items[1].productId = productIds[2] // T-Shirt
+    // Update reviews with user, product, and order references
+    console.log("Updating reviews...");
+    const updatedReviews = seedData.reviews.map((review, index) => ({
+      user: johnUserId, // Changed from userId to user
+      product: productMap.get(review.title.includes("headphones") ? "Wireless Bluetooth Headphones" : "Smartphone Case - Clear"), // Changed from productId to product
+      order: orderResult[0]._id, // Add required order reference using actual order ID
+      rating: review.rating,
+      comment: review.comment,
+      verified: review.isVerified, // Changed from isVerified to verified
+      helpful: review.isHelpful, // Changed from isHelpful to helpful
+      createdAt: review.createdAt,
+      updatedAt: review.updatedAt,
+    }));
+    await Review.insertMany(updatedReviews);
 
-    // Insert orders
-    console.log("Inserting orders...")
-    await db.collection("orders").insertMany(seedData.orders)
+    // Insert coupons with createdBy field
+    console.log("Inserting coupons...");
+    const adminUserId = userMap.get("admin@draprly.com"); // Admin creates the coupons
+    const couponsWithCreator = seedData.coupons.map(coupon => ({
+      ...coupon,
+      createdBy: adminUserId,
+    }));
+    await Coupon.insertMany(couponsWithCreator);
 
-    // Update reviews with user and product IDs
-    seedData.reviews[0].productId = productIds[0] // Headphones
-    seedData.reviews[0].userId = userIds[1] // John Doe
-    seedData.reviews[1].productId = productIds[1] // Phone Case
-    seedData.reviews[1].userId = userIds[1] // John Doe
+    console.log("Database seeded successfully!");
+    console.log(`Inserted ${userResult.length} users`);
+    console.log(`Inserted ${productResult.length} products`);
+    console.log(`Inserted ${seedData.coupons.length} coupons`);
+    console.log(`Inserted ${orderResult.length} orders`);
+    console.log(`Inserted ${updatedReviews.length} reviews`);
 
-    // Insert reviews
-    console.log("Inserting reviews...")
-    await db.collection("reviews").insertMany(seedData.reviews)
-
-    console.log("Database seeded successfully!")
-    console.log(`Inserted ${userIds.length} users`)
-    console.log(`Inserted ${productIds.length} products`)
-    console.log(`Inserted ${seedData.coupons.length} coupons`)
-    console.log(`Inserted ${seedData.orders.length} orders`)
-    console.log(`Inserted ${seedData.reviews.length} reviews`)
   } catch (error) {
-    console.error("Error seeding database:", error)
+    console.error("Error seeding database:", error);
   } finally {
-    await client.close()
+    process.exit(0);
   }
 }
 
 // Run the seed function
-seedDatabase()
+seedDatabase();

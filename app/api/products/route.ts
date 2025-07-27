@@ -1,6 +1,9 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { connectDB } from "@/lib/mongodb"
 import { Product } from "@/models/Product"
+import { Review } from "@/models/Review"
+import { User } from "@/models/User"
+import { Order } from "@/models/Order"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { generateQRCode } from "@/lib/qr-code"
@@ -8,6 +11,7 @@ import { generateQRCode } from "@/lib/qr-code"
 export async function GET(request: NextRequest) {
   try {
     await connectDB()
+  
 
     const { searchParams } = new URL(request.url)
     const page = Number.parseInt(searchParams.get("page") || "1")

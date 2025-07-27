@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { connectDB } from "@/lib/mongodb"
 import { Order } from "@/models/Order"
+import { User } from "@/models/User"
 
 export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
   try {

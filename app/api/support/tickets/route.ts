@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { connectDB } from "@/lib/mongodb"
 import { SupportTicket } from "@/models/SupportTicket"
+import { User } from "@/models/User"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { sendSupportTicketEmail } from "@/lib/email"
