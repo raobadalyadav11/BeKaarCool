@@ -13,88 +13,45 @@ import { Minus, Plus, Trash2, ShoppingBag, ArrowRight, Tag } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 import { useToast } from "@/hooks/use-toast"
-
-interface CartItem {
-  _id: string
-  product: {
-    _id: string
-    name: string
-    images: string[]
-    price: number
-    stock: number
-  }
-  quantity: number
-  size: string
-  color: string
-  price: number
-}
-
-interface Cart {
-  _id: string
-  items: CartItem[]
-  total: number
-  discount: number
-  couponCode?: string
-}
+import { useAppSelector, useAppDispatch } from "@/store"
+import { fetchCart, updateCartItem, removeFromCart, applyCoupon } from "@/store/slices/cart-slice"
 
 export default function CartPage() {
   const { data: session } = useSession()
   const router = useRouter()
   const { toast } = useToast()
-  const [cart, setCart] = useState<Cart | null>(null)
-  const [loading, setLoading] = useState(true)
+  const dispatch = useAppDispatch()
+  
+  const { items, total, discount, couponCode: appliedCoupon, loading } = useAppSelector((state) => state.cart)
+  
   const [updating, setUpdating] = useState<string | null>(null)
   const [couponCode, setCouponCode] = useState("")
   const [applyingCoupon, setApplyingCoupon] = useState(false)
 
   useEffect(() => {
     if (session) {
-      fetchCart()
+      dispatch(fetchCart())
     }
-  }, [session])
+  }, [session, dispatch])
 
-  const fetchCart = async () => {
-    setLoading(true)
-    try {
-      const response = await fetch("/api/cart")
-      if (response.ok) {
-        const data = await response.json()
-        setCart(data)
-        setCouponCode(data.couponCode || "")
-      }
-    } catch (error) {
-      console.error("Error fetching cart:", error)
-    } finally {
-      setLoading(false)
-    }
-  }
+  useEffect(() => {
+    setCouponCode(appliedCoupon || "")
+  }, [appliedCoupon])
 
   const updateQuantity = async (itemId: string, newQuantity: number) => {
     if (newQuantity < 1) return
 
     setUpdating(itemId)
     try {
-      const response = await fetch(`/api/cart/${itemId}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ quantity: newQuantity }),
+      await dispatch(updateCartItem({ itemId, quantity: newQuantity })).unwrap()
+      toast({
+        title: "Cart updated",
+        description: "Item quantity has been updated.",
       })
-
-      if (response.ok) {
-        await fetchCart()
-        toast({
-          title: "Cart updated",
-          description: "Item quantity has been updated.",
-        })
-      } else {
-        throw new Error("Failed to update quantity")
-      }
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Error",
-        description: "Failed to update item quantity.",
+        description: error.message || "Failed to update item quantity.",
         variant: "destructive",
       })
     } finally {
@@ -105,23 +62,15 @@ export default function CartPage() {
   const removeItem = async (itemId: string) => {
     setUpdating(itemId)
     try {
-      const response = await fetch(`/api/cart/${itemId}`, {
-        method: "DELETE",
+      await dispatch(removeFromCart(itemId)).unwrap()
+      toast({
+        title: "Item removed",
+        description: "Item has been removed from your cart.",
       })
-
-      if (response.ok) {
-        await fetchCart()
-        toast({
-          title: "Item removed",
-          description: "Item has been removed from your cart.",
-        })
-      } else {
-        throw new Error("Failed to remove item")
-      }
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Error",
-        description: "Failed to remove item from cart.",
+        description: error.message || "Failed to remove item from cart.",
         variant: "destructive",
       })
     } finally {
@@ -129,30 +78,16 @@ export default function CartPage() {
     }
   }
 
-  const applyCoupon = async () => {
+  const handleApplyCoupon = async () => {
     if (!couponCode.trim()) return
 
     setApplyingCoupon(true)
     try {
-      const response = await fetch("/api/cart/coupon", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ couponCode: couponCode.trim() }),
+      const result = await dispatch(applyCoupon(couponCode.trim())).unwrap()
+      toast({
+        title: "Coupon applied",
+        description: `You saved ₹${result.discount}!`,
       })
-
-      const data = await response.json()
-
-      if (response.ok) {
-        await fetchCart()
-        toast({
-          title: "Coupon applied",
-          description: `You saved ₹${data.discount}!`,
-        })
-      } else {
-        throw new Error(data.message || "Invalid coupon code")
-      }
     } catch (error: any) {
       toast({
         title: "Error",
@@ -171,7 +106,7 @@ export default function CartPage() {
       })
 
       if (response.ok) {
-        await fetchCart()
+        dispatch(fetchCart())
         setCouponCode("")
         toast({
           title: "Coupon removed",
@@ -245,7 +180,7 @@ export default function CartPage() {
     )
   }
 
-  if (!cart || cart.items.length === 0) {
+  if (items.length === 0) {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="text-center py-16">
@@ -268,7 +203,7 @@ export default function CartPage() {
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Shopping Cart</h1>
         <p className="text-gray-600">
-          {cart.items.length} item{cart.items.length !== 1 ? "s" : ""} in your cart
+          {items.length} item{items.length !== 1 ? "s" : ""} in your cart
         </p>
       </div>
 
@@ -276,14 +211,14 @@ export default function CartPage() {
         {/* Cart Items */}
         <div className="lg:col-span-2">
           <div className="space-y-4">
-            {cart.items.map((item) => (
-              <Card key={item._id}>
+            {items.map((item) => (
+              <Card key={item.id}>
                 <CardContent className="p-6">
                   <div className="flex items-start space-x-4">
                     <div className="relative h-24 w-24 rounded-lg overflow-hidden bg-gray-100">
                       <Image
-                        src={item.product.images[0] || "/placeholder.svg"}
-                        alt={item.product.name}
+                        src={item.image}
+                        alt={item.name}
                         fill
                         className="object-cover"
                       />
@@ -292,18 +227,18 @@ export default function CartPage() {
                     <div className="flex-1">
                       <div className="flex items-start justify-between">
                         <div>
-                          <h3 className="font-semibold text-gray-900">{item.product.name}</h3>
+                          <h3 className="font-semibold text-gray-900">{item.name}</h3>
                           <div className="mt-1 space-y-1">
                             <p className="text-sm text-gray-600">Size: {item.size}</p>
                             <p className="text-sm text-gray-600">Color: {item.color}</p>
                             <p className="text-sm text-gray-600">
-                              Stock: {item.product.stock > 0 ? `${item.product.stock} available` : "Out of stock"}
+                              Stock: {item.stock > 0 ? `${item.stock} available` : "Out of stock"}
                             </p>
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className="font-semibold text-gray-900">₹{item.price}</p>
-                          <p className="text-sm text-gray-600">₹{item.product.price} each</p>
+                          <p className="font-semibold text-gray-900">₹{item.price * item.quantity}</p>
+                          <p className="text-sm text-gray-600">₹{item.price} each</p>
                         </div>
                       </div>
 
@@ -312,8 +247,8 @@ export default function CartPage() {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => updateQuantity(item._id, item.quantity - 1)}
-                            disabled={item.quantity <= 1 || updating === item._id}
+                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                            disabled={item.quantity <= 1 || updating === item.id}
                           >
                             <Minus className="h-4 w-4" />
                           </Button>
@@ -321,8 +256,8 @@ export default function CartPage() {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => updateQuantity(item._id, item.quantity + 1)}
-                            disabled={item.quantity >= item.product.stock || updating === item._id}
+                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                            disabled={item.quantity >= item.stock || updating === item.id}
                           >
                             <Plus className="h-4 w-4" />
                           </Button>
@@ -331,15 +266,15 @@ export default function CartPage() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => removeItem(item._id)}
-                          disabled={updating === item._id}
+                          onClick={() => removeItem(item.id)}
+                          disabled={updating === item.id}
                           className="text-red-600 hover:text-red-700 hover:bg-red-50"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
 
-                      {item.product.stock === 0 && (
+                      {item.stock === 0 && (
                         <Alert className="mt-4">
                           <AlertDescription>This item is currently out of stock.</AlertDescription>
                         </Alert>
@@ -369,20 +304,20 @@ export default function CartPage() {
                     onChange={(e) => setCouponCode(e.target.value)}
                     disabled={applyingCoupon}
                   />
-                  {cart.couponCode ? (
+                  {appliedCoupon ? (
                     <Button variant="outline" onClick={removeCoupon} disabled={applyingCoupon}>
                       Remove
                     </Button>
                   ) : (
-                    <Button variant="outline" onClick={applyCoupon} disabled={applyingCoupon || !couponCode.trim()}>
+                    <Button variant="outline" onClick={handleApplyCoupon} disabled={applyingCoupon || !couponCode.trim()}>
                       <Tag className="mr-2 h-4 w-4" />
                       Apply
                     </Button>
                   )}
                 </div>
-                {cart.couponCode && (
+                {appliedCoupon && (
                   <div className="flex items-center space-x-2">
-                    <Badge variant="secondary">{cart.couponCode}</Badge>
+                    <Badge variant="secondary">{appliedCoupon}</Badge>
                     <span className="text-sm text-green-600">Coupon applied!</span>
                   </div>
                 )}
@@ -394,12 +329,12 @@ export default function CartPage() {
               <div className="space-y-2">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Subtotal</span>
-                  <span>₹{cart.total + cart.discount}</span>
+                  <span>₹{total + discount}</span>
                 </div>
-                {cart.discount > 0 && (
+                {discount > 0 && (
                   <div className="flex justify-between text-green-600">
                     <span>Discount</span>
-                    <span>-₹{cart.discount}</span>
+                    <span>-₹{discount}</span>
                   </div>
                 )}
                 <div className="flex justify-between">
@@ -409,7 +344,7 @@ export default function CartPage() {
                 <Separator />
                 <div className="flex justify-between font-semibold text-lg">
                   <span>Total</span>
-                  <span>₹{cart.total}</span>
+                  <span>₹{total}</span>
                 </div>
               </div>
 
@@ -417,7 +352,7 @@ export default function CartPage() {
                 className="w-full"
                 size="lg"
                 onClick={proceedToCheckout}
-                disabled={cart.items.some((item) => item.product.stock === 0)}
+                disabled={items.some((item) => item.stock === 0)}
               >
                 Proceed to Checkout
                 <ArrowRight className="ml-2 h-5 w-5" />

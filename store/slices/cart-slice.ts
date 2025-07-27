@@ -10,6 +10,7 @@ interface CartItem {
   quantity: number
   size: string
   color: string
+  stock: number
   customization?: {
     design?: string
     text?: string
@@ -47,7 +48,31 @@ const initialState: CartState = {
 export const fetchCart = createAsyncThunk("cart/fetchCart", async () => {
   const response = await fetch("/api/cart")
   if (!response.ok) throw new Error("Failed to fetch cart")
-  return response.json()
+  const data = await response.json()
+  
+  // Transform API response to match Redux state structure
+  const transformedItems = data.items.map((item: any) => ({
+    id: item._id,
+    productId: item.product._id,
+    name: item.product.name,
+    price: item.product.price,
+    originalPrice: item.product.originalPrice,
+    image: item.product.images[0] || "/placeholder.svg",
+    quantity: item.quantity,
+    size: item.size,
+    color: item.color,
+    customization: item.customization,
+    seller: {
+      id: item.product.seller._id,
+      name: item.product.seller.name,
+    },
+    stock: item.product.stock,
+  }))
+  
+  return {
+    ...data,
+    items: transformedItems,
+  }
 })
 
 export const addToCart = createAsyncThunk(
@@ -68,7 +93,31 @@ export const addToCart = createAsyncThunk(
       const error = await response.json()
       throw new Error(error.message || "Failed to add to cart")
     }
-    return response.json()
+    const data = await response.json()
+    
+    // Transform API response to match Redux state structure
+    const transformedItems = data.items.map((item: any) => ({
+      id: item._id,
+      productId: item.product._id,
+      name: item.product.name,
+      price: item.product.price,
+      originalPrice: item.product.originalPrice,
+      image: item.product.images[0] || "/placeholder.svg",
+      quantity: item.quantity,
+      size: item.size,
+      color: item.color,
+      customization: item.customization,
+      seller: {
+        id: item.product.seller._id,
+        name: item.product.seller.name,
+      },
+      stock: item.product.stock,
+    }))
+    
+    return {
+      ...data,
+      items: transformedItems,
+    }
   },
 )
 
@@ -81,7 +130,31 @@ export const updateCartItem = createAsyncThunk(
       body: JSON.stringify({ quantity }),
     })
     if (!response.ok) throw new Error("Failed to update cart item")
-    return response.json()
+    const data = await response.json()
+    
+    // Transform API response to match Redux state structure
+    const transformedItems = data.items.map((item: any) => ({
+      id: item._id,
+      productId: item.product._id,
+      name: item.product.name,
+      price: item.product.price,
+      originalPrice: item.product.originalPrice,
+      image: item.product.images[0] || "/placeholder.svg",
+      quantity: item.quantity,
+      size: item.size,
+      color: item.color,
+      customization: item.customization,
+      seller: {
+        id: item.product.seller._id,
+        name: item.product.seller.name,
+      },
+      stock: item.product.stock,
+    }))
+    
+    return {
+      ...data,
+      items: transformedItems,
+    }
   },
 )
 
@@ -90,7 +163,31 @@ export const removeFromCart = createAsyncThunk("cart/removeFromCart", async (ite
     method: "DELETE",
   })
   if (!response.ok) throw new Error("Failed to remove from cart")
-  return response.json()
+  const data = await response.json()
+  
+  // Transform API response to match Redux state structure
+  const transformedItems = data.items.map((item: any) => ({
+    id: item._id,
+    productId: item.product._id,
+    name: item.product.name,
+    price: item.product.price,
+    originalPrice: item.product.originalPrice,
+    image: item.product.images[0] || "/placeholder.svg",
+    quantity: item.quantity,
+    size: item.size,
+    color: item.color,
+    customization: item.customization,
+    seller: {
+      id: item.product.seller._id,
+      name: item.product.seller.name,
+    },
+    stock: item.product.stock,
+  }))
+  
+  return {
+    ...data,
+    items: transformedItems,
+  }
 })
 
 export const applyCoupon = createAsyncThunk("cart/applyCoupon", async (couponCode: string) => {
@@ -132,6 +229,10 @@ const cartSlice = createSlice({
       .addCase(fetchCart.fulfilled, (state, action) => {
         state.loading = false
         state.items = action.payload.items
+        state.total = action.payload.total
+        state.subtotal = action.payload.subtotal
+        state.shipping = action.payload.shipping
+        state.tax = action.payload.tax
         state.couponCode = action.payload.couponCode
         state.discount = action.payload.discount
       })
@@ -141,12 +242,27 @@ const cartSlice = createSlice({
       })
       .addCase(addToCart.fulfilled, (state, action) => {
         state.items = action.payload.items
+        state.total = action.payload.total
+        state.subtotal = action.payload.subtotal
+        state.shipping = action.payload.shipping
+        state.tax = action.payload.tax
+        state.discount = action.payload.discount
       })
       .addCase(updateCartItem.fulfilled, (state, action) => {
         state.items = action.payload.items
+        state.total = action.payload.total
+        state.subtotal = action.payload.subtotal
+        state.shipping = action.payload.shipping
+        state.tax = action.payload.tax
+        state.discount = action.payload.discount
       })
       .addCase(removeFromCart.fulfilled, (state, action) => {
         state.items = action.payload.items
+        state.total = action.payload.total
+        state.subtotal = action.payload.subtotal
+        state.shipping = action.payload.shipping
+        state.tax = action.payload.tax
+        state.discount = action.payload.discount
       })
       .addCase(applyCoupon.fulfilled, (state, action) => {
         state.discount = action.payload.discount

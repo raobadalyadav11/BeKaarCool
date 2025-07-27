@@ -8,9 +8,8 @@ import { ThemeProvider } from "@/components/theme-provider"
 import { LanguageProvider } from "@/contexts/language-context"
 import { CurrencyProvider } from "@/contexts/currency-context"
 import { ChatProvider } from "@/contexts/chat-context"
-import { Header } from "@/components/layout/header"
-import { Footer } from "@/components/layout/footer"
 import { LiveChat } from "@/components/support/live-chat"
+import { CartProvider } from "@/contexts/cart-context"
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
@@ -20,12 +19,12 @@ export function Providers({ children }: { children: React.ReactNode }) {
           <LanguageProvider>
             <CurrencyProvider>
               <ChatProvider>
+                <CartProvider>
                 <div className="min-h-screen flex flex-col">
-                  <Header />
                   <main className="flex-1">{children}</main>
-                  <Footer />
                   <LiveChat />
                 </div>
+                </CartProvider>
               </ChatProvider>
             </CurrencyProvider>
           </LanguageProvider>

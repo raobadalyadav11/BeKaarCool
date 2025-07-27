@@ -12,7 +12,8 @@ async function getFeaturedProducts() {
       cache: "no-store",
     })
     if (!res.ok) return []
-    return res.json()
+    const data = await res.json()
+    return Array.isArray(data) ? data : []
   } catch (error) {
     console.error("Error fetching featured products:", error)
     return []
@@ -25,7 +26,8 @@ async function getNewestProducts() {
       cache: "no-store",
     })
     if (!res.ok) return []
-    return res.json()
+    const data = await res.json()
+    return Array.isArray(data) ? data : []
   } catch (error) {
     console.error("Error fetching newest products:", error)
     return []
@@ -38,7 +40,8 @@ async function getTrendingProducts() {
       cache: "no-store",
     })
     if (!res.ok) return []
-    return res.json()
+    const data = await res.json()
+    return Array.isArray(data) ? data : []
   } catch (error) {
     console.error("Error fetching trending products:", error)
     return []
@@ -51,7 +54,8 @@ async function getRecommendedProducts() {
       cache: "no-store",
     })
     if (!res.ok) return []
-    return res.json()
+    const data = await res.json()
+    return Array.isArray(data) ? data : []
   } catch (error) {
     console.error("Error fetching recommended products:", error)
     return []

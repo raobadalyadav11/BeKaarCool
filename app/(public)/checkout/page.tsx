@@ -66,16 +66,6 @@ export default function CheckoutPage() {
       router.push("/cart")
       return
     }
-
-    // Load Razorpay script
-    const script = document.createElement("script")
-    script.src = "https://checkout.razorpay.com/v1/checkout.js"
-    script.async = true
-    document.body.appendChild(script)
-
-    return () => {
-      document.body.removeChild(script)
-    }
   }, [session, items, router])
 
   const handleAddressChange = (field: keyof ShippingAddress, value: string) => {

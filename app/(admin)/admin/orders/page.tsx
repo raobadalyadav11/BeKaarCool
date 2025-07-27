@@ -207,7 +207,7 @@ export default function AdminOrdersPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Total Revenue</p>
-                <p className="text-2xl font-bold">₹{totalRevenue.toLocaleString()}</p>
+                <p className="text-2xl font-bold">₹{totalRevenue?.toLocaleString() ?? '0'}</p>
               </div>
               <DollarSign className="h-8 w-8 text-purple-600" />
             </div>
@@ -328,8 +328,8 @@ export default function AdminOrdersPage() {
                     </TableCell>
                     <TableCell>
                       <div>
-                        <p className="font-medium">{order.customer.name}</p>
-                        <p className="text-sm text-gray-500">{order.customer.email}</p>
+                        <p className="font-medium">{order.customer?.name}</p>
+                        <p className="text-sm text-gray-500">{order.customer?.email}</p>
                       </div>
                     </TableCell>
                     <TableCell>
@@ -345,7 +345,7 @@ export default function AdminOrdersPage() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <p className="font-medium">₹{order.totalAmount.toLocaleString()}</p>
+<p className="font-medium">₹{order.totalAmount?.toLocaleString() ?? '0'}</p>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center space-x-2">
@@ -414,8 +414,8 @@ export default function AdminOrdersPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <h4 className="font-medium mb-2">Customer Information</h4>
-                  <p>{selectedOrder.customer.name}</p>
-                  <p className="text-sm text-gray-500">{selectedOrder.customer.email}</p>
+                  <p>{selectedOrder.customer?.name}</p>
+                  <p className="text-sm text-gray-500">{selectedOrder.customer?.email}</p>
                 </div>
                 <div>
                   <h4 className="font-medium mb-2">Order Status</h4>
@@ -470,8 +470,10 @@ export default function AdminOrdersPage() {
               <div className="border-t pt-4">
                 <div className="flex justify-between items-center">
                   <span className="font-medium">Total Amount:</span>
-                  <span className="text-xl font-bold">₹{selectedOrder.totalAmount.toLocaleString()}</span>
-                </div>
+<span className="text-xl font-bold">
+  ₹{selectedOrder?.totalAmount?.toLocaleString() ?? '0'}
+</span>
+              </div>
               </div>
             </div>
           )}
