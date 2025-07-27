@@ -306,7 +306,11 @@ export default function HomePage() {
                 <Card className="hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer">
                   <CardContent className="p-6 text-center">
                     <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-4">
-                      <category.icon className={`h-8 w-8 ${category.color}`} />
+{category.icon ? (
+  <category.icon className={`h-8 w-8 ${category.color}`} />
+) : (
+  <div className="h-8 w-8 text-gray-400">?</div>
+)}
                     </div>
                     <h3 className="font-semibold text-gray-900 mb-2">{category.name}</h3>
                     <p className="text-sm text-gray-600">{category.count} products</p>
@@ -397,39 +401,8 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-
-      {/* Newsletter Section */}
-      <section className="py-16 bg-gradient-to-r from-blue-600 to-purple-600 text-white">
-        <div className="container">
-          <div className="max-w-2xl mx-auto text-center">
-            <h2 className="text-3xl lg:text-4xl font-bold mb-4">Stay Updated</h2>
-            <p className="text-xl text-blue-100 mb-8">
-              Get the latest designs, offers, and updates delivered to your inbox
-            </p>
-
-            <form onSubmit={handleNewsletterSubmit} className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
-              <Input
-                type="email"
-                placeholder="Enter your email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="flex-1 bg-white/10 border-white/20 text-white placeholder:text-white/70"
-                required
-              />
-              <Button
-                type="submit"
-                disabled={subscribing}
-                className="bg-white text-blue-600 hover:bg-gray-100 font-semibold"
-              >
-                {subscribing ? "Subscribing..." : "Subscribe"}
-              </Button>
-            </form>
-          </div>
-        </div>
-      </section>
-
       {/* CTA Section */}
-      <section className="py-16">
+      <section className="py-">
         <div className="container">
           <Card className="bg-gradient-to-r from-gray-900 to-gray-800 text-white">
             <CardContent className="p-12 text-center">

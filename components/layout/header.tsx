@@ -113,7 +113,7 @@ export function Header() {
         {/* Navigation */}
         <nav className="hidden md:flex items-center space-x-6">
           <Link href="/products" className="text-sm font-medium hover:text-primary transition-colors">
-            Products
+            Marketplace
           </Link>
           <Link href="/design" className="text-sm font-medium hover:text-primary transition-colors flex items-center">
             <Palette className="h-4 w-4 mr-1" />
@@ -129,46 +129,6 @@ export function Header() {
 
         {/* Right Side Actions */}
         <div className="flex items-center space-x-2">
-          {/* Language Selector */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="hidden sm:flex">
-                <Globe className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem onClick={() => setLanguage("en")}>English {language === "en" && "✓"}</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setLanguage("hi")}>हिंदी {language === "hi" && "✓"}</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          {/* Currency Selector */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="hidden sm:flex">
-                <DollarSign className="h-4 w-4" />
-                <span className="ml-1">{currency.code}</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              {currencies.map((curr) => (
-                <DropdownMenuItem key={curr.code} onClick={() => setCurrency(curr)}>
-                  {curr.symbol} {curr.code} {currency.code === curr.code && "✓"}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          {/* Theme Toggle */}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setTheme(theme === "light" ? "dark" : "light")}
-            className="hidden sm:flex"
-          >
-            <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-            <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-          </Button>
 
           {/* Cart */}
           <Link href="/cart">

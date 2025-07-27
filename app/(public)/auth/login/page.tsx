@@ -153,6 +153,12 @@ export default function LoginPage() {
                   Sign up
                 </Link>
               </span>
+           <button
+        className="bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600"
+        onClick={() => signIn("google")}
+      >
+        Sign in with Google
+      </button>
             </div>
           </form>
         </CardContent>
