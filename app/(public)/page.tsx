@@ -401,36 +401,6 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-      {/* CTA Section */}
-      <section className="py-">
-        <div className="container">
-          <Card className="bg-gradient-to-r from-gray-900 to-gray-800 text-white">
-            <CardContent className="p-12 text-center">
-              <h2 className="text-3xl lg:text-4xl font-bold mb-4">Ready to Start Creating?</h2>
-              <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
-                Join thousands of creators who are already making money with their custom designs
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Link href="/design">
-                  <Button size="lg" className="bg-blue-600 hover:bg-blue-700">
-                    <Palette className="mr-2 h-5 w-5" />
-                    Start Designing Now
-                  </Button>
-                </Link>
-                <Link href="/seller/register">
-                  <Button
-                    size="lg"
-                    variant="outline"
-                    className="border-white text-white hover:bg-white/10 bg-transparent"
-                  >
-                    Become a Seller
-                  </Button>
-                </Link>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </section>
     </div>
   )
 }
