@@ -6,8 +6,8 @@
     "build": "next build",
     "dev": "next dev",
     "lint": "next lint",
-    "start": "next start",
-    "seed":"npx tsx scripts/seed-data.ts"
+    "seed": "npx tsx scripts/seed-data.ts",
+    "start": "next start"
   },
   "dependencies": {
     "@auth/core": "latest",

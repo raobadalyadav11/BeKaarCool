@@ -1,9 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { connectDB } from "@/lib/mongodb"
 import { Product } from "@/models/Product"
-import { Review } from "@/models/Review"
-import { User } from "@/models/User"
-import { Order } from "@/models/Order"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { generateQRCode } from "@/lib/qr-code"
@@ -11,7 +8,6 @@ import { generateQRCode } from "@/lib/qr-code"
 export async function GET(request: NextRequest) {
   try {
     await connectDB()
-  
 
     const { searchParams } = new URL(request.url)
     const page = Number.parseInt(searchParams.get("page") || "1")
@@ -86,15 +82,6 @@ export async function GET(request: NextRequest) {
       .skip(skip)
       .limit(limit)
       .populate("seller", "name email avatar")
-      .populate({
-        path: "reviews",
-        select: "rating comment user createdAt",
-        populate: {
-          path: "user",
-          select: "name avatar",
-        },
-        options: { sort: { createdAt: -1 }, limit: 5 },
-      })
 
     const total = await Product.countDocuments(filter)
 

@@ -1,8 +1,8 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
 import { connectDB } from "@/lib/mongodb"
 import { Product } from "@/models/Product"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth"
 
 export async function GET(request: NextRequest) {
   try {
@@ -15,30 +15,41 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url)
     const page = Number.parseInt(searchParams.get("page") || "1")
-    const limit = Number.parseInt(searchParams.get("limit") || "10")
+    const limit = Number.parseInt(searchParams.get("limit") || "20")
     const category = searchParams.get("category")
     const status = searchParams.get("status")
     const search = searchParams.get("search")
 
-    const query: any = {}
+    const skip = (page - 1) * limit
+
+    // Build filter object
+    const filter: any = {}
 
     if (category && category !== "all") {
-      query.category = category
+      filter.category = category
     }
 
-    if (status && status !== "all") {
-      if (status === "active") query.isActive = true
-      if (status === "inactive") query.isActive = false
-      if (status === "featured") query.isFeatured = true
+    if (status === "active") {
+      filter.isActive = true
+    } else if (status === "inactive") {
+      filter.isActive = false
     }
 
     if (search) {
-      query.$or = [{ name: { $regex: search, $options: "i" } }, { description: { $regex: search, $options: "i" } }]
+      filter.$or = [
+        { name: { $regex: search, $options: "i" } },
+        { description: { $regex: search, $options: "i" } },
+        { category: { $regex: search, $options: "i" } },
+      ]
     }
 
-    const skip = (page - 1) * limit
-    const total = await Product.countDocuments(query)
-    const products = await Product.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit)
+    const products = await Product.find(filter)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .populate("seller", "name email avatar")
+
+    const total = await Product.countDocuments(filter)
 
     return NextResponse.json({
       products,
@@ -51,7 +62,7 @@ export async function GET(request: NextRequest) {
     })
   } catch (error) {
     console.error("Error fetching products:", error)
-    return NextResponse.json({ message: "Internal server error" }, { status: 500 })
+    return NextResponse.json({ message: "Failed to fetch products" }, { status: 500 })
   }
 }
 
@@ -63,18 +74,43 @@ export async function POST(request: NextRequest) {
     }
 
     await connectDB()
-    const productData = await request.json()
+
+    const body = await request.json()
+
+    // Validate required fields
+    if (!body.name || !body.description || !body.price || !body.category) {
+      return NextResponse.json({ message: "Missing required fields" }, { status: 400 })
+    }
+
+    // Generate product slug
+    const slug = body.name
+      .toLowerCase()
+      .replace(/\s+/g, "-")
+      .replace(/[^a-z0-9-]/g, "")
 
     const product = new Product({
-      ...productData,
+      ...body,
+      seller: session.user.id,
+      slug,
+      seo: {
+        title: body.name,
+        description: body.description.substring(0, 160),
+        keywords: body.tags || [],
+      },
+      views: 0,
+      sold: 0,
+      rating: 0,
+      reviews: [],
       createdAt: new Date(),
       updatedAt: new Date(),
     })
 
     await product.save()
+    await product.populate("seller", "name email avatar")
+
     return NextResponse.json(product, { status: 201 })
   } catch (error) {
     console.error("Error creating product:", error)
-    return NextResponse.json({ message: "Internal server error" }, { status: 500 })
+    return NextResponse.json({ message: "Failed to create product" }, { status: 500 })
   }
 }

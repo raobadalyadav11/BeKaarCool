@@ -13,6 +13,7 @@ export const metadata: Metadata = {
   description: "Create, customize, and sell premium custom clothing and accessories with advanced design tools",
   keywords: "custom clothing, print on demand, design studio, e-commerce, canvas editor",
   authors: [{ name: "Draprly Team" }],
+    generator: 'v0.dev'
 }
 
 export default function RootLayout({

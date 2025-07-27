@@ -6,11 +6,6 @@ const productSchema = new mongoose.Schema({
     required: true,
     trim: true,
   },
-  slug: {
-    type: String,
-    unique: true,
-    required: true,
-  },
   description: {
     type: String,
     required: true,
@@ -24,12 +19,7 @@ const productSchema = new mongoose.Schema({
     type: Number,
     min: 0,
   },
-  images: [
-    {
-      type: String,
-      required: true,
-    },
-  ],
+  images: [String],
   videos: [String],
   category: {
     type: String,
@@ -48,12 +38,9 @@ const productSchema = new mongoose.Schema({
     type: Number,
     required: true,
     min: 0,
-  },
-  sold: {
-    type: Number,
     default: 0,
   },
-  views: {
+  sold: {
     type: Number,
     default: 0,
   },
@@ -91,17 +78,14 @@ const productSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
-  customizationOptions: {
-    allowText: Boolean,
-    allowImages: Boolean,
-    allowColors: Boolean,
-    maxTextLength: Number,
-    allowedFonts: [String],
-  },
   qrCode: String,
-  affiliateCommission: {
+  slug: {
+    type: String,
+    unique: true,
+  },
+  views: {
     type: Number,
-    default: 5, // 5% commission
+    default: 0,
   },
   createdAt: {
     type: Date,
@@ -115,11 +99,10 @@ const productSchema = new mongoose.Schema({
 
 productSchema.index({ name: "text", description: "text", tags: "text" })
 productSchema.index({ category: 1 })
-productSchema.index({ seller: 1 })
-productSchema.index({ featured: 1 })
-productSchema.index({ isActive: 1 })
 productSchema.index({ price: 1 })
 productSchema.index({ rating: -1 })
+productSchema.index({ featured: -1 })
 productSchema.index({ createdAt: -1 })
+productSchema.index({ seller: 1 })
 
 export const Product = mongoose.models.Product || mongoose.model("Product", productSchema)

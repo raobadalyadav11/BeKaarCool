@@ -11,33 +11,34 @@ const userSchema = new mongoose.Schema({
     required: true,
     unique: true,
     lowercase: true,
-    trim: true,
   },
   password: {
     type: String,
-    required: true,
     select: false,
   },
+  avatar: String,
+  phone: String,
   role: {
     type: String,
     enum: ["customer", "seller", "admin"],
     default: "customer",
   },
-  avatar: {
-    type: String,
-    default: "",
+  isVerified: {
+    type: Boolean,
+    default: false,
   },
-  phone: {
-    type: String,
-    default: "",
-  },
-  address: {
-    street: String,
-    city: String,
-    state: String,
-    zipCode: String,
-    country: String,
-  },
+  addresses: [
+    {
+      name: String,
+      phone: String,
+      address: String,
+      city: String,
+      state: String,
+      pincode: String,
+      country: String,
+      isDefault: Boolean,
+    },
+  ],
   preferences: {
     language: {
       type: String,
@@ -57,22 +58,15 @@ const userSchema = new mongoose.Schema({
     },
     theme: {
       type: String,
+      enum: ["light", "dark"],
       default: "light",
     },
   },
-  isVerified: {
-    type: Boolean,
-    default: false,
-  },
-  verificationToken: String,
-  resetToken: String,
-  resetTokenExpiry: Date,
   lastLogin: Date,
-  affiliateCode: String,
-  affiliateEarnings: {
-    type: Number,
-    default: 0,
-  },
+  resetPasswordToken: String,
+  resetPasswordExpires: Date,
+  emailVerificationToken: String,
+  emailVerificationExpires: Date,
   createdAt: {
     type: Date,
     default: Date.now,
@@ -85,6 +79,6 @@ const userSchema = new mongoose.Schema({
 
 userSchema.index({ email: 1 })
 userSchema.index({ role: 1 })
-userSchema.index({ affiliateCode: 1 })
+userSchema.index({ createdAt: -1 })
 
 export const User = mongoose.models.User || mongoose.model("User", userSchema)
