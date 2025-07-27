@@ -4,7 +4,7 @@ import { Product } from "@/models/Product"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await getServerSession(authOptions)
     if (!session || session.user.role !== "admin") {
@@ -13,7 +13,8 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 
     await connectDB()
 
-    const product = await Product.findById(params.id).populate("seller", "name email avatar")
+    const { id } = await params
+    const product = await Product.findById(id).populate("seller", "name email avatar")
 
     if (!product) {
       return NextResponse.json({ message: "Product not found" }, { status: 404 })

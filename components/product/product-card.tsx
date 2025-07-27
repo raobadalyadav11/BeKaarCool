@@ -9,8 +9,9 @@ import { Badge } from "@/components/ui/badge"
 import { Star, ShoppingCart, Heart, Eye } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
-import { useCart } from "@/contexts/cart-context"
 import { useToast } from "@/hooks/use-toast"
+import { useAppDispatch } from "@/store"
+import { addToCart } from "@/store/slices/cart-slice"
 
 interface ProductCardProps {
   product: any
@@ -19,7 +20,7 @@ interface ProductCardProps {
 
 export function ProductCard({ product, viewMode = "grid" }: ProductCardProps) {
   const [isWishlisted, setIsWishlisted] = useState(false)
-  const { addToCart } = useCart()
+  const dispatch = useAppDispatch()
   const { toast } = useToast()
 
   const handleAddToCart = async (e: React.MouseEvent) => {
@@ -27,21 +28,21 @@ export function ProductCard({ product, viewMode = "grid" }: ProductCardProps) {
     e.stopPropagation()
 
     try {
-      await addToCart({
+      await dispatch(addToCart({
         productId: product._id,
         quantity: 1,
         size: product.sizes?.[0] || "M",
         color: product.colors?.[0] || "Black",
-      })
+      })).unwrap()
 
       toast({
         title: "Added to cart!",
         description: `${product.name} has been added to your cart.`,
       })
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Error",
-        description: "Failed to add item to cart",
+        description: error.message || "Failed to add item to cart",
         variant: "destructive",
       })
     }

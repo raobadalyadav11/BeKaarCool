@@ -5,7 +5,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { resolveUserId } from "@/lib/auth-utils"
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
@@ -16,8 +16,11 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 
     // Resolve user ID to ensure it's a valid MongoDB ObjectId
     const userId = await resolveUserId(session.user.id, session.user.email)
+    
+    // Await params before using
+    const { id } = await params
 
-    const order = await Order.findById(params.id)
+    const order = await Order.findById(id)
       .populate("items.product", "name images")
       .populate("user", "name email")
 
@@ -41,7 +44,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
@@ -52,8 +55,11 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 
     // Resolve user ID to ensure it's a valid MongoDB ObjectId
     const userId = await resolveUserId(session.user.id, session.user.email)
+    
+    // Await params before using
+    const { id } = await params
 
-    const order = await Order.findById(params.id)
+    const order = await Order.findById(id)
     if (!order) {
       return NextResponse.json({ message: "Order not found" }, { status: 404 })
     }
@@ -70,7 +76,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 
     const body = await request.json()
     const updatedOrder = await Order.findByIdAndUpdate(
-      params.id,
+      id,
       { ...body, updatedAt: new Date() },
       { new: true, runValidators: true },
     ).populate("items.product", "name images")

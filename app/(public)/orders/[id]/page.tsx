@@ -57,7 +57,7 @@ interface OrderDetails {
 }
 
 interface OrderPageProps {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }
 
 export default function OrderDetailsPage({ params }: OrderPageProps) {
@@ -65,17 +65,28 @@ export default function OrderDetailsPage({ params }: OrderPageProps) {
   const [order, setOrder] = useState<OrderDetails | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
+  const [orderId, setOrderId] = useState<string | null>(null)
 
   useEffect(() => {
-    if (session && params.id) {
+    const getParams = async () => {
+      const { id } = await params
+      setOrderId(id)
+    }
+    getParams()
+  }, [params])
+
+  useEffect(() => {
+    if (session && orderId) {
       fetchOrderDetails()
     }
-  }, [session, params.id])
+  }, [session, orderId])
 
   const fetchOrderDetails = async () => {
+    if (!orderId) return
+    
     setLoading(true)
     try {
-      const response = await fetch(`/api/orders/${params.id}`)
+      const response = await fetch(`/api/orders/${orderId}`)
 
       if (!response.ok) {
         throw new Error("Order not found")

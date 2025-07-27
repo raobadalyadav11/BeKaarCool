@@ -15,7 +15,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { ShoppingCart, CreditCard, Truck, MapPin, Tag, ArrowLeft, Lock, CheckCircle } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { useAppSelector, useAppDispatch } from "@/store"
-import { clearCart } from "@/store/slices/cart-slice"
+import { clearCart, fetchCart } from "@/store/slices/cart-slice"
 
 declare global {
   interface Window {
@@ -38,7 +38,7 @@ export default function CheckoutPage() {
   const { toast } = useToast()
   const dispatch = useAppDispatch()
 
-  const { items, total, discount, couponCode } = useAppSelector((state) => state.cart)
+  const { items, total, subtotal, shipping, tax, discount, couponCode } = useAppSelector((state) => state.cart)
 
   const [loading, setLoading] = useState(false)
   const [paymentMethod, setPaymentMethod] = useState("razorpay")
@@ -53,8 +53,8 @@ export default function CheckoutPage() {
   const [couponInput, setCouponInput] = useState("")
   const [appliedCoupon, setAppliedCoupon] = useState<any>(null)
 
-  const shippingCost = 99
-  const finalTotal = total - discount + shippingCost
+  // Use the total from Redux state which already includes all calculations
+  const finalTotal = total
 
   useEffect(() => {
     if (!session) {
@@ -62,11 +62,16 @@ export default function CheckoutPage() {
       return
     }
 
+    // Fetch cart data if not already loaded
     if (items.length === 0) {
-      router.push("/cart")
-      return
+      dispatch(fetchCart()).then((result) => {
+        // If cart is still empty after fetching, redirect to cart page
+        if (result.payload?.items?.length === 0) {
+          router.push("/cart")
+        }
+      })
     }
-  }, [session, items, router])
+  }, [session, items, router, dispatch])
 
   const handleAddressChange = (field: keyof ShippingAddress, value: string) => {
     setShippingAddress((prev) => ({ ...prev, [field]: value }))
@@ -411,7 +416,11 @@ export default function CheckoutPage() {
                 <div className="space-y-2">
                   <div className="flex justify-between">
                     <span>Subtotal</span>
-                    <span>₹{total.toLocaleString()}</span>
+                    <span>₹{subtotal.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Tax (18% GST)</span>
+                    <span>₹{tax.toLocaleString()}</span>
                   </div>
                   {discount > 0 && (
                     <div className="flex justify-between text-green-600">
@@ -424,7 +433,7 @@ export default function CheckoutPage() {
                       <Truck className="h-4 w-4 mr-1" />
                       Shipping
                     </span>
-                    <span>₹{shippingCost}</span>
+                    <span>{shipping === 0 ? "FREE" : `₹${shipping}`}</span>
                   </div>
                   <Separator />
                   <div className="flex justify-between text-lg font-bold">

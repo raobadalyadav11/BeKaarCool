@@ -194,11 +194,21 @@ export const applyCoupon = createAsyncThunk("cart/applyCoupon", async (couponCod
   const response = await fetch("/api/cart/coupon", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ couponCode }),
+    body: JSON.stringify({ code: couponCode }),
   })
   if (!response.ok) {
     const error = await response.json()
     throw new Error(error.message || "Invalid coupon code")
+  }
+  return response.json()
+})
+
+export const removeCoupon = createAsyncThunk("cart/removeCoupon", async () => {
+  const response = await fetch("/api/cart/coupon", {
+    method: "DELETE",
+  })
+  if (!response.ok) {
+    throw new Error("Failed to remove coupon")
   }
   return response.json()
 })
@@ -267,6 +277,10 @@ const cartSlice = createSlice({
       .addCase(applyCoupon.fulfilled, (state, action) => {
         state.discount = action.payload.discount
         state.couponCode = action.payload.couponCode
+      })
+      .addCase(removeCoupon.fulfilled, (state, action) => {
+        state.discount = 0
+        state.couponCode = undefined
       })
   },
 })

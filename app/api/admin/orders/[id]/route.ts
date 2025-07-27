@@ -4,7 +4,7 @@ import { Order } from "@/models/Order"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await getServerSession(authOptions)
     if (!session || session.user.role !== "admin") {
@@ -13,7 +13,10 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 
     await connectDB()
 
-    const order = await Order.findById(params.id)
+    // Await params before using
+    const { id } = await params
+
+    const order = await Order.findById(id)
       .populate("customer", "name email")
       .populate("items.product", "name images")
 
@@ -28,7 +31,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await getServerSession(authOptions)
     if (!session || session.user.role !== "admin") {
@@ -37,10 +40,13 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 
     await connectDB()
 
+    // Await params before using
+    const { id } = await params
+
     const body = await request.json()
 
     const order = await Order.findByIdAndUpdate(
-      params.id,
+      id,
       {
         ...body,
         updatedAt: new Date(),

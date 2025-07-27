@@ -5,7 +5,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { resolveUserId } from "@/lib/auth-utils"
 
-export async function PUT(request: NextRequest, { params }: { params: { itemId: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ itemId: string }> }) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
@@ -16,6 +16,9 @@ export async function PUT(request: NextRequest, { params }: { params: { itemId: 
 
     // Resolve user ID to ensure it's a valid MongoDB ObjectId
     const userId = await resolveUserId(session.user.id, session.user.email)
+    
+    // Await params before using
+    const { itemId } = await params
 
     const { quantity } = await request.json()
 
@@ -28,7 +31,7 @@ export async function PUT(request: NextRequest, { params }: { params: { itemId: 
       return NextResponse.json({ message: "Cart not found" }, { status: 404 })
     }
 
-    const itemIndex = cart.items.findIndex((item: any) => item._id.toString() === params.itemId)
+    const itemIndex = cart.items.findIndex((item: any) => item._id.toString() === itemId)
     if (itemIndex === -1) {
       return NextResponse.json({ message: "Item not found in cart" }, { status: 404 })
     }
@@ -65,7 +68,7 @@ export async function PUT(request: NextRequest, { params }: { params: { itemId: 
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { itemId: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ itemId: string }> }) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
@@ -76,13 +79,16 @@ export async function DELETE(request: NextRequest, { params }: { params: { itemI
 
     // Resolve user ID to ensure it's a valid MongoDB ObjectId
     const userId = await resolveUserId(session.user.id, session.user.email)
+    
+    // Await params before using
+    const { itemId } = await params
 
     const cart = await Cart.findOne({ user: userId })
     if (!cart) {
       return NextResponse.json({ message: "Cart not found" }, { status: 404 })
     }
 
-    cart.items = cart.items.filter((item: any) => item._id.toString() !== params.itemId)
+    cart.items = cart.items.filter((item: any) => item._id.toString() !== itemId)
 
     // Recalculate totals
     await cart.populate({

@@ -22,16 +22,21 @@ import { useCurrency } from "@/contexts/currency-context"
 import { Search, ShoppingCart, User, Menu, Globe, DollarSign, Sun, Moon, Palette, Store } from "lucide-react"
 import { useTheme } from "next-themes"
 import { useToast } from "@/hooks/use-toast"
+import { useAppSelector, useAppDispatch } from "@/store"
+import { fetchCart } from "@/store/slices/cart-slice"
 
 export function Header() {
   const { data: session } = useSession()
   const router = useRouter()
   const { toast } = useToast()
+  const dispatch = useAppDispatch()
   const { language, setLanguage, t } = useLanguage()
   const { currency, setCurrency } = useCurrency()
   const { theme, setTheme } = useTheme()
   const [searchQuery, setSearchQuery] = useState("")
-  const [cartCount, setCartCount] = useState(0)
+  
+  const { items } = useAppSelector((state) => state.cart)
+  const cartCount = items.reduce((sum, item) => sum + item.quantity, 0)
 
   const currencies = [
     { code: "INR", symbol: "₹", rate: 1 },
@@ -42,22 +47,9 @@ export function Header() {
 
   useEffect(() => {
     if (session) {
-      fetchCartCount()
+      dispatch(fetchCart())
     }
-  }, [session])
-
-  const fetchCartCount = async () => {
-    try {
-      const response = await fetch("/api/cart")
-      if (response.ok) {
-        const data = await response.json()
-        const count = data.items?.reduce((total: number, item: any) => total + item.quantity, 0) || 0
-        setCartCount(count)
-      }
-    } catch (error) {
-      console.error("Error fetching cart count:", error)
-    }
-  }
+  }, [session, dispatch])
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()

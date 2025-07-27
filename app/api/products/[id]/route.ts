@@ -7,7 +7,7 @@ import { Order } from "@/models/Order"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     await connectDB()
     
@@ -16,7 +16,10 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     User
     Order
 
-    const product = await Product.findById(params.id)
+    // Await params before using
+    const { id } = await params
+
+    const product = await Product.findById(id)
       .populate("seller", "name email avatar phone")
       .populate({
         path: "reviews",
@@ -32,7 +35,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     }
 
     // Increment view count
-    await Product.findByIdAndUpdate(params.id, { $inc: { views: 1 } })
+    await Product.findByIdAndUpdate(id, { $inc: { views: 1 } })
 
     return NextResponse.json(product)
   } catch (error) {
@@ -41,7 +44,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await getServerSession(authOptions)
     if (!session) {
@@ -50,7 +53,10 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 
     await connectDB()
 
-    const product = await Product.findById(params.id)
+    // Await params before using
+    const { id } = await params
+
+    const product = await Product.findById(id)
     if (!product) {
       return NextResponse.json({ message: "Product not found" }, { status: 404 })
     }
@@ -74,7 +80,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     }
 
     const updatedProduct = await Product.findByIdAndUpdate(
-      params.id,
+      id,
       { ...body, updatedAt: new Date() },
       { new: true, runValidators: true },
     ).populate("seller", "name email avatar")
@@ -86,7 +92,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await getServerSession(authOptions)
     if (!session) {
@@ -95,7 +101,10 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
 
     await connectDB()
 
-    const product = await Product.findById(params.id)
+    // Await params before using
+    const { id } = await params
+
+    const product = await Product.findById(id)
     if (!product) {
       return NextResponse.json({ message: "Product not found" }, { status: 404 })
     }
@@ -105,7 +114,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
       return NextResponse.json({ message: "Forbidden" }, { status: 403 })
     }
 
-    await Product.findByIdAndDelete(params.id)
+    await Product.findByIdAndDelete(id)
 
     return NextResponse.json({ message: "Product deleted successfully" })
   } catch (error) {

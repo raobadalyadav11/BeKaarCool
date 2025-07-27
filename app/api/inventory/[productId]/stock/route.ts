@@ -4,7 +4,7 @@ import { authOptions } from "@/lib/auth"
 import { connectDB } from "@/lib/mongodb"
 import { Product } from "@/models/Product"
 
-export async function PUT(request: NextRequest, { params }: { params: { productId: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ productId: string }> }) {
   try {
     const session = await getServerSession(authOptions)
     if (!session || session.user.role !== "admin") {
@@ -12,9 +12,13 @@ export async function PUT(request: NextRequest, { params }: { params: { productI
     }
 
     await connectDB()
+    
+    // Await params before using
+    const { productId } = await params
+    
     const { quantity, type } = await request.json()
 
-    const product = await Product.findById(params.productId)
+    const product = await Product.findById(productId)
     if (!product) {
       return NextResponse.json({ message: "Product not found" }, { status: 404 })
     }
@@ -27,7 +31,7 @@ export async function PUT(request: NextRequest, { params }: { params: { productI
     }
 
     const updatedProduct = await Product.findByIdAndUpdate(
-      params.productId,
+      productId,
       { stock: newStock, updatedAt: new Date() },
       { new: true },
     )

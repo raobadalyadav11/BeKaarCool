@@ -8,8 +8,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Star, ShoppingCart, Heart, Share2, Truck, Shield, RotateCcw, Plus, Minus } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
-import { useCart } from "@/contexts/cart-context"
 import { useToast } from "@/hooks/use-toast"
+import { useAppDispatch } from "@/store"
+import { addToCart } from "@/store/slices/cart-slice"
 import { ProductCard } from "@/components/product/product-card"
 import { ReviewSection } from "@/components/product/review-section"
 import { ShareDialog } from "@/components/product/share-dialog"
@@ -29,7 +30,7 @@ export default function ProductPage({ params }: ProductPageProps) {
   const [showShareDialog, setShowShareDialog] = useState(false)
   const [copied, setCopied] = useState(false)
 
-  const { addToCart } = useCart()
+  const dispatch = useAppDispatch()
   const { toast } = useToast()
 
   useEffect(() => {
@@ -71,21 +72,21 @@ export default function ProductPage({ params }: ProductPageProps) {
     }
 
     try {
-      await addToCart({
+      await dispatch(addToCart({
         productId: product._id,
         quantity,
         size: selectedSize,
         color: selectedColor,
-      })
+      })).unwrap()
 
       toast({
         title: "Added to cart!",
         description: `${product.name} has been added to your cart.`,
       })
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Error",
-        description: "Failed to add item to cart",
+        description: error.message || "Failed to add item to cart",
         variant: "destructive",
       })
     }

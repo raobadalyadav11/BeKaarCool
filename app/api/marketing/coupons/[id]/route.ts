@@ -4,7 +4,7 @@ import { authOptions } from "@/lib/auth"
 import { connectDB } from "@/lib/mongodb"
 import { Coupon } from "@/models/Coupon"
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await getServerSession(authOptions)
     if (!session || session.user.role !== "admin") {
@@ -12,9 +12,13 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     }
 
     await connectDB()
+    
+    // Await params before using
+    const { id } = await params
+    
     const updateData = await request.json()
 
-    const coupon = await Coupon.findByIdAndUpdate(params.id, { ...updateData, updatedAt: new Date() }, { new: true })
+    const coupon = await Coupon.findByIdAndUpdate(id, { ...updateData, updatedAt: new Date() }, { new: true })
 
     if (!coupon) {
       return NextResponse.json({ message: "Coupon not found" }, { status: 404 })
@@ -27,7 +31,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await getServerSession(authOptions)
     if (!session || session.user.role !== "admin") {
@@ -36,7 +40,10 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
 
     await connectDB()
 
-    const coupon = await Coupon.findByIdAndDelete(params.id)
+    // Await params before using
+    const { id } = await params
+
+    const coupon = await Coupon.findByIdAndDelete(id)
     if (!coupon) {
       return NextResponse.json({ message: "Coupon not found" }, { status: 404 })
     }
