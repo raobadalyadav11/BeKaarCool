@@ -3,6 +3,7 @@ import { connectDB } from "@/lib/mongodb"
 import { Order } from "@/models/Order"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
+import { resolveUserId } from "@/lib/auth-utils"
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -12,6 +13,9 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     }
 
     await connectDB()
+
+    // Resolve user ID to ensure it's a valid MongoDB ObjectId
+    const userId = await resolveUserId(session.user.id, session.user.email)
 
     const order = await Order.findById(params.id)
       .populate("items.product", "name images")
@@ -23,9 +27,9 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 
     // Check if user owns the order or is admin/seller
     if (
-      order.user._id.toString() !== session.user.id &&
+      order.user._id.toString() !== userId &&
       session.user.role !== "admin" &&
-      !order.items.some((item: any) => item.seller.toString() === session.user.id)
+      !order.items.some((item: any) => item.seller.toString() === userId)
     ) {
       return NextResponse.json({ message: "Forbidden" }, { status: 403 })
     }
@@ -46,6 +50,9 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 
     await connectDB()
 
+    // Resolve user ID to ensure it's a valid MongoDB ObjectId
+    const userId = await resolveUserId(session.user.id, session.user.email)
+
     const order = await Order.findById(params.id)
     if (!order) {
       return NextResponse.json({ message: "Order not found" }, { status: 404 })
@@ -54,8 +61,8 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     // Check permissions
     const canUpdate =
       session.user.role === "admin" ||
-      order.items.some((item: any) => item.seller.toString() === session.user.id) ||
-      (order.user.toString() === session.user.id && ["pending", "confirmed"].includes(order.status))
+      order.items.some((item: any) => item.seller.toString() === userId) ||
+      (order.user.toString() === userId && ["pending", "confirmed"].includes(order.status))
 
     if (!canUpdate) {
       return NextResponse.json({ message: "Forbidden" }, { status: 403 })

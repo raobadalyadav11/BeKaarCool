@@ -55,9 +55,9 @@ export const authOptions: NextAuthOptions = {
         try {
           await connectDB()
 
-          const existingUser = await User.findOne({ email: user.email })
+          let existingUser = await User.findOne({ email: user.email })
           if (!existingUser) {
-            await User.create({
+            existingUser = await User.create({
               name: user.name,
               email: user.email,
               avatar: user.image,
@@ -72,6 +72,11 @@ export const authOptions: NextAuthOptions = {
               },
             })
           }
+          
+          // Set the MongoDB ObjectId as the user ID
+          user.id = existingUser._id.toString()
+          user.role = existingUser.role
+          
           return true
         } catch (error) {
           console.error("Google sign in error:", error)
@@ -80,10 +85,22 @@ export const authOptions: NextAuthOptions = {
       }
       return true
     },
-    async jwt({ token, user }) {
+    async jwt({ token, user, account }) {
       if (user) {
         token.role = user.role
         token.id = user.id
+      } else if (account?.provider === "google" && token.email) {
+        // For subsequent requests, ensure we have the correct MongoDB ObjectId
+        try {
+          await connectDB()
+          const dbUser = await User.findOne({ email: token.email })
+          if (dbUser) {
+            token.id = dbUser._id.toString()
+            token.role = dbUser.role
+          }
+        } catch (error) {
+          console.error("Error fetching user in JWT callback:", error)
+        }
       }
       return token
     },

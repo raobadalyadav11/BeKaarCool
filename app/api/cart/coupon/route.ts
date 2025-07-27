@@ -4,6 +4,7 @@ import { Cart } from "@/models/Cart"
 import { Coupon } from "@/models/Coupon"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
+import { resolveUserId } from "@/lib/auth-utils"
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,6 +14,9 @@ export async function POST(request: NextRequest) {
     }
 
     await connectDB()
+
+    // Resolve user ID to ensure it's a valid MongoDB ObjectId
+    const userId = await resolveUserId(session.user.id, session.user.email)
 
     const { couponCode } = await request.json()
 
@@ -32,7 +36,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Coupon usage limit exceeded" }, { status: 400 })
     }
 
-    const cart = await Cart.findOne({ user: session.user.id })
+    const cart = await Cart.findOne({ user: userId })
     if (!cart) {
       return NextResponse.json({ error: "Cart not found" }, { status: 404 })
     }

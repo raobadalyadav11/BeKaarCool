@@ -4,6 +4,7 @@ import { Cart } from "@/models/Cart"
 import { Product } from "@/models/Product"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
+import { resolveUserId } from "@/lib/auth-utils"
 
 export async function GET(request: NextRequest) {
   try {
@@ -14,7 +15,10 @@ export async function GET(request: NextRequest) {
 
     await connectDB()
 
-    let cart = await Cart.findOne({ user: session.user.id }).populate({
+    // Resolve user ID to ensure it's a valid MongoDB ObjectId
+    const userId = await resolveUserId(session.user.id, session.user.email)
+
+    let cart = await Cart.findOne({ user: userId }).populate({
       path: "items.product",
       select: "name price originalPrice images stock seller isActive",
       populate: {
@@ -25,7 +29,7 @@ export async function GET(request: NextRequest) {
 
     if (!cart) {
       cart = new Cart({
-        user: session.user.id,
+        user: userId,
         items: [],
         total: 0,
         subtotal: 0,
@@ -66,6 +70,9 @@ export async function POST(request: NextRequest) {
 
     await connectDB()
 
+    // Resolve user ID to ensure it's a valid MongoDB ObjectId
+    const userId = await resolveUserId(session.user.id, session.user.email)
+
     const { productId, quantity, size, color, customization } = await request.json()
 
     if (!productId || !quantity || quantity < 1) {
@@ -81,9 +88,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: "Insufficient stock" }, { status: 400 })
     }
 
-    let cart = await Cart.findOne({ user: session.user.id })
+    let cart = await Cart.findOne({ user: userId })
     if (!cart) {
-      cart = new Cart({ user: session.user.id, items: [], total: 0 })
+      cart = new Cart({ user: userId, items: [], total: 0 })
     }
 
     // Check if item already exists in cart
@@ -147,8 +154,11 @@ export async function DELETE(request: NextRequest) {
 
     await connectDB()
 
+    // Resolve user ID to ensure it's a valid MongoDB ObjectId
+    const userId = await resolveUserId(session.user.id, session.user.email)
+
     await Cart.findOneAndUpdate(
-      { user: session.user.id },
+      { user: userId },
       {
         items: [],
         total: 0,

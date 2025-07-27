@@ -192,3 +192,107 @@ export async function sendOrderStatusUpdateEmail(email: string, name: string, or
 
   await transporter.sendMail(mailOptions)
 }
+
+export async function sendSupportTicketEmail(ticket: any) {
+  const ticketUrl = `${process.env.NEXT_PUBLIC_APP_URL}/support/tickets/${ticket._id}`
+  
+  const priorityColors = {
+    low: "#28a745",
+    medium: "#ffc107", 
+    high: "#fd7e14",
+    urgent: "#dc3545"
+  }
+
+  const categoryLabels = {
+    order: "Order Issue",
+    product: "Product Issue", 
+    payment: "Payment Issue",
+    shipping: "Shipping Issue",
+    account: "Account Issue",
+    technical: "Technical Issue",
+    other: "Other"
+  }
+
+  // Send email to support team
+  const supportMailOptions = {
+    from: process.env.FROM_EMAIL,
+    to: process.env.SUPPORT_EMAIL,
+    subject: `New Support Ticket - ${ticket.ticketNumber}`,
+    html: `
+      <div style="max-width: 600px; margin: 0 auto; padding: 20px; font-family: Arial, sans-serif;">
+        <h1 style="color: #333; text-align: center;">New Support Ticket</h1>
+        <p>A new support ticket has been created and requires attention.</p>
+        
+        <div style="background-color: #f8f9fa; padding: 20px; border-radius: 5px; margin: 20px 0;">
+          <h2 style="margin-top: 0;">Ticket Details</h2>
+          <p><strong>Ticket Number:</strong> ${ticket.ticketNumber}</p>
+          <p><strong>Customer:</strong> ${ticket.user?.name} (${ticket.user?.email})</p>
+          <p><strong>Subject:</strong> ${ticket.subject}</p>
+          <p><strong>Category:</strong> ${categoryLabels[ticket.category as keyof typeof categoryLabels] || ticket.category}</p>
+          <p><strong>Priority:</strong> <span style="color: ${priorityColors[ticket.priority as keyof typeof priorityColors]}; text-transform: capitalize; font-weight: bold;">${ticket.priority}</span></p>
+          <p><strong>Status:</strong> <span style="text-transform: capitalize;">${ticket.status}</span></p>
+          <p><strong>Created:</strong> ${new Date(ticket.createdAt).toLocaleString()}</p>
+        </div>
+
+        <div style="background-color: #fff; border: 1px solid #dee2e6; padding: 15px; border-radius: 5px; margin: 20px 0;">
+          <h3 style="margin-top: 0;">Description:</h3>
+          <p style="white-space: pre-wrap;">${ticket.description}</p>
+        </div>
+
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${ticketUrl}" style="background-color: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">
+            View Ticket
+          </a>
+        </div>
+        
+        <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
+        <p style="color: #666; font-size: 12px; text-align: center;">
+          This email was sent by Draprly Support System.
+        </p>
+      </div>
+    `,
+  }
+
+  // Send confirmation email to customer
+  const customerMailOptions = {
+    from: process.env.FROM_EMAIL,
+    to: ticket.user?.email,
+    subject: `Support Ticket Created - ${ticket.ticketNumber}`,
+    html: `
+      <div style="max-width: 600px; margin: 0 auto; padding: 20px; font-family: Arial, sans-serif;">
+        <h1 style="color: #333; text-align: center;">Support Ticket Created</h1>
+        <p>Hi ${ticket.user?.name},</p>
+        <p>Thank you for contacting Draprly support. We've received your support ticket and our team will review it shortly.</p>
+        
+        <div style="background-color: #f8f9fa; padding: 20px; border-radius: 5px; margin: 20px 0;">
+          <h2 style="margin-top: 0;">Your Ticket Details</h2>
+          <p><strong>Ticket Number:</strong> ${ticket.ticketNumber}</p>
+          <p><strong>Subject:</strong> ${ticket.subject}</p>
+          <p><strong>Category:</strong> ${categoryLabels[ticket.category as keyof typeof categoryLabels] || ticket.category}</p>
+          <p><strong>Priority:</strong> <span style="text-transform: capitalize;">${ticket.priority}</span></p>
+          <p><strong>Status:</strong> <span style="text-transform: capitalize;">${ticket.status}</span></p>
+        </div>
+
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${ticketUrl}" style="background-color: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">
+            View Ticket
+          </a>
+        </div>
+
+        <p>We aim to respond to all tickets within 24 hours. You'll receive an email notification when there's an update on your ticket.</p>
+        <p>Please keep your ticket number <strong>${ticket.ticketNumber}</strong> for reference.</p>
+        
+        <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
+        <p style="color: #666; font-size: 12px; text-align: center;">
+          This email was sent by Draprly. If you have any questions, please contact us at ${process.env.SUPPORT_EMAIL}
+        </p>
+      </div>
+    `,
+  }
+
+  // Send both emails
+  await Promise.all([
+    transporter.sendMail(supportMailOptions),
+    transporter.sendMail(customerMailOptions)
+  ])
+}

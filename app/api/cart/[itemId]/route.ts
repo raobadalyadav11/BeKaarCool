@@ -3,6 +3,7 @@ import { connectDB } from "@/lib/mongodb"
 import { Cart } from "@/models/Cart"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
+import { resolveUserId } from "@/lib/auth-utils"
 
 export async function PUT(request: NextRequest, { params }: { params: { itemId: string } }) {
   try {
@@ -13,13 +14,16 @@ export async function PUT(request: NextRequest, { params }: { params: { itemId: 
 
     await connectDB()
 
+    // Resolve user ID to ensure it's a valid MongoDB ObjectId
+    const userId = await resolveUserId(session.user.id, session.user.email)
+
     const { quantity } = await request.json()
 
     if (!quantity || quantity < 1) {
       return NextResponse.json({ message: "Invalid quantity" }, { status: 400 })
     }
 
-    const cart = await Cart.findOne({ user: session.user.id })
+    const cart = await Cart.findOne({ user: userId })
     if (!cart) {
       return NextResponse.json({ message: "Cart not found" }, { status: 404 })
     }
@@ -70,7 +74,10 @@ export async function DELETE(request: NextRequest, { params }: { params: { itemI
 
     await connectDB()
 
-    const cart = await Cart.findOne({ user: session.user.id })
+    // Resolve user ID to ensure it's a valid MongoDB ObjectId
+    const userId = await resolveUserId(session.user.id, session.user.email)
+
+    const cart = await Cart.findOne({ user: userId })
     if (!cart) {
       return NextResponse.json({ message: "Cart not found" }, { status: 404 })
     }

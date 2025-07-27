@@ -6,6 +6,7 @@ import { Product } from "@/models/Product"
 import { User } from "@/models/User"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
+import { resolveUserId } from "@/lib/auth-utils"
 import { sendOrderConfirmationEmail } from "@/lib/email"
 import { createShipment } from "@/lib/shiprocket"
 
@@ -24,7 +25,10 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get("status")
 
     const skip = (page - 1) * limit
-    const filter: any = { user: session.user.id }
+    
+    // Resolve user ID to ensure it's a valid MongoDB ObjectId
+    const userId = await resolveUserId(session.user.id, session.user.email)
+    const filter: any = { user: userId }
 
     if (status && status !== "all") {
       filter.status = status
@@ -61,6 +65,9 @@ export async function POST(request: NextRequest) {
     }
 
     await connectDB()
+
+    // Resolve user ID to ensure it's a valid MongoDB ObjectId
+    const userId = await resolveUserId(session.user.id, session.user.email)
 
     const {
       items,
@@ -103,7 +110,7 @@ export async function POST(request: NextRequest) {
 
     // Create order
     const order = new Order({
-      user: session.user.id,
+      user: userId,
       items: items.map((item: any) => ({
         ...item,
         seller: item.sellerId, // Assuming sellerId is provided
@@ -137,10 +144,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Clear cart
-    await Cart.findOneAndUpdate({ user: session.user.id }, { items: [], total: 0, discount: 0, couponCode: null })
+    await Cart.findOneAndUpdate({ user: userId }, { items: [], total: 0, discount: 0, couponCode: null })
 
     // Get user details for email
-    const user = await User.findById(session.user.id)
+    const user = await User.findById(userId)
 
     // Send order confirmation email
     try {
