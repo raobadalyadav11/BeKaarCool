@@ -27,7 +27,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   }
 }
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await getServerSession(authOptions)
     if (!session || session.user.role !== "admin") {
@@ -36,10 +36,11 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 
     await connectDB()
 
+    const { id } = await params
     const body = await request.json()
 
     const product = await Product.findByIdAndUpdate(
-      params.id,
+      id,
       {
         ...body,
         updatedAt: new Date(),
@@ -58,7 +59,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await getServerSession(authOptions)
     if (!session || session.user.role !== "admin") {
@@ -67,7 +68,8 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
 
     await connectDB()
 
-    const product = await Product.findByIdAndDelete(params.id)
+    const { id } = await params
+    const product = await Product.findByIdAndDelete(id)
 
     if (!product) {
       return NextResponse.json({ message: "Product not found" }, { status: 404 })

@@ -4,7 +4,7 @@ import { authOptions } from "@/lib/auth"
 import { connectDB } from "@/lib/mongodb"
 import { User } from "@/models/User"
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await getServerSession(authOptions)
     if (!session || session.user.role !== "admin") {
@@ -12,9 +12,11 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     }
 
     await connectDB()
+    
+    const { id } = await params
     const { isActive, role, isVerified } = await request.json()
 
-    const user = await User.findByIdAndUpdate(params.id, { isActive, role, isVerified }, { new: true }).select(
+    const user = await User.findByIdAndUpdate(id, { isActive, role, isVerified }, { new: true }).select(
       "-password",
     )
 
@@ -29,7 +31,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await getServerSession(authOptions)
     if (!session || session.user.role !== "admin") {
@@ -38,7 +40,8 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
 
     await connectDB()
 
-    const user = await User.findByIdAndDelete(params.id)
+    const { id } = await params
+    const user = await User.findByIdAndDelete(id)
     if (!user) {
       return NextResponse.json({ message: "User not found" }, { status: 404 })
     }

@@ -70,6 +70,12 @@ export default function OrderDetailsPage({ params }: OrderPageProps) {
   useEffect(() => {
     const getParams = async () => {
       const { id } = await params
+      // Validate that the ID is not undefined or invalid
+      if (!id || id === 'undefined' || id === 'null') {
+        setError("Invalid order ID")
+        setLoading(false)
+        return
+      }
       setOrderId(id)
     }
     getParams()

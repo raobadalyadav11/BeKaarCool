@@ -14,13 +14,15 @@ import { addToCart } from "@/store/slices/cart-slice"
 import { ProductCard } from "@/components/product/product-card"
 import { ReviewSection } from "@/components/product/review-section"
 import { ShareDialog } from "@/components/product/share-dialog"
+import { useParams } from "next/navigation"
 
 interface ProductPageProps {
   params: { id: string }
 }
 
-export default function ProductPage({ params }: ProductPageProps) {
+export default function ProductPage() {
   const [product, setProduct] = useState<any>(null)
+  const params=useParams();
   const [relatedProducts, setRelatedProducts] = useState([])
   const [loading, setLoading] = useState(true)
   const [selectedImage, setSelectedImage] = useState(0)

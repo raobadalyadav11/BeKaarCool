@@ -20,6 +20,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     // Await params before using
     const { id } = await params
 
+    // Validate ObjectId format
+    if (!id || id === 'undefined' || id === 'null' || !/^[0-9a-fA-F]{24}$/.test(id)) {
+      return NextResponse.json({ message: "Invalid order ID" }, { status: 400 })
+    }
+
     const order = await Order.findById(id)
       .populate("items.product", "name images")
       .populate("user", "name email")
