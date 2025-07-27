@@ -1,107 +1,189 @@
+"use client"
+
+import type React from "react"
+
+import { useState, useEffect } from "react"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Star, ShoppingCart, Truck, Shield, Palette, Users, TrendingUp, Heart, Zap, Award, Package } from "lucide-react"
-import Link from "next/link"
-import Image from "next/image"
-import { ProductCard } from "@/components/product/product-card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Input } from "@/components/ui/input"
+import {
+  ArrowRight,
+  Star,
+  ShoppingCart,
+  Users,
+  Package,
+  TrendingUp,
+  Zap,
+  Heart,
+  Palette,
+  Shirt,
+  Coffee,
+  Smartphone,
+  ShoppingBag,
+  Award,
+  Shield,
+  Truck,
+  Headphones,
+} from "lucide-react"
+import { useToast } from "@/hooks/use-toast"
 
-async function getFeaturedProducts() {
-  try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/products/featured`, {
-      cache: "no-store",
-    })
-    if (!res.ok) return []
-    const data = await res.json()
-    return Array.isArray(data) ? data : []
-  } catch (error) {
-    console.error("Error fetching featured products:", error)
-    return []
-  }
+interface Product {
+  _id: string
+  name: string
+  description: string
+  price: number
+  originalPrice?: number
+  images: string[]
+  category: string
+  rating: number
+  sold: number
+  featured: boolean
+  createdAt: string
 }
 
-async function getNewestProducts() {
-  try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/products?sort=newest&limit=8`, {
-      cache: "no-store",
-    })
-    if (!res.ok) return []
-    const data = await res.json()
-    return Array.isArray(data) ? data : []
-  } catch (error) {
-    console.error("Error fetching newest products:", error)
-    return []
-  }
+interface Category {
+  name: string
+  count: number
+  icon: any
+  color: string
 }
 
-async function getTrendingProducts() {
-  try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/products?sort=trending&limit=8`, {
-      cache: "no-store",
-    })
-    if (!res.ok) return []
-    const data = await res.json()
-    return Array.isArray(data) ? data : []
-  } catch (error) {
-    console.error("Error fetching trending products:", error)
-    return []
-  }
-}
+export default function HomePage() {
+  const [products, setProducts] = useState<Product[]>([])
+  const [categories, setCategories] = useState<Category[]>([])
+  const [loading, setLoading] = useState(true)
+  const [email, setEmail] = useState("")
+  const [subscribing, setSubscribing] = useState(false)
+  const { toast } = useToast()
 
-async function getRecommendedProducts() {
-  try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/products?sort=recommended&limit=8`, {
-      cache: "no-store",
-    })
-    if (!res.ok) return []
-    const data = await res.json()
-    return Array.isArray(data) ? data : []
-  } catch (error) {
-    console.error("Error fetching recommended products:", error)
-    return []
-  }
-}
+  useEffect(() => {
+    fetchHomeData()
+  }, [])
 
-export default async function HomePage() {
-  const [featuredProducts, newestProducts, trendingProducts, recommendedProducts] = await Promise.all([
-    getFeaturedProducts(),
-    getNewestProducts(),
-    getTrendingProducts(),
-    getRecommendedProducts(),
-  ])
+  const fetchHomeData = async () => {
+    try {
+      setLoading(true)
+      const [productsRes, categoriesRes] = await Promise.all([
+        fetch("/api/products?featured=true&limit=20"),
+        fetch("/api/products/categories"),
+      ])
+
+      if (productsRes.ok) {
+        const productsData = await productsRes.json()
+        setProducts(productsData.products || [])
+      }
+
+      if (categoriesRes.ok) {
+        const categoriesData = await categoriesRes.json()
+        const categoryIcons = {
+          "T-Shirts": { icon: Shirt, color: "text-blue-600" },
+          Hoodies: { icon: Shirt, color: "text-purple-600" },
+          Mugs: { icon: Coffee, color: "text-orange-600" },
+          "Mobile Covers": { icon: Smartphone, color: "text-green-600" },
+          "Tote Bags": { icon: ShoppingBag, color: "text-pink-600" },
+          Accessories: { icon: Star, color: "text-yellow-600" },
+        }
+
+        const formattedCategories = categoriesData.map((cat: any) => ({
+          ...cat,
+          ...categoryIcons[cat.name as keyof typeof categoryIcons],
+        }))
+        setCategories(formattedCategories)
+      }
+    } catch (error) {
+      console.error("Error fetching home data:", error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleNewsletterSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!email.trim()) return
+
+    setSubscribing(true)
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 1000))
+      toast({
+        title: "Subscribed!",
+        description: "Thank you for subscribing to our newsletter.",
+      })
+      setEmail("")
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to subscribe. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setSubscribing(false)
+    }
+  }
+
+  const addToCart = async (product: Product) => {
+    try {
+      const response = await fetch("/api/cart", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          productId: product._id,
+          quantity: 1,
+        }),
+      })
+
+      if (response.ok) {
+        toast({
+          title: "Added to cart!",
+          description: `${product.name} has been added to your cart.`,
+        })
+      } else {
+        throw new Error("Failed to add to cart")
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Please login to add items to cart.",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const featuredProducts = products.filter((p) => p.featured)
+  const newestProducts = products.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+  const trendingProducts = products.sort((a, b) => b.sold - a.sold)
+  const recommendedProducts = products.sort((a, b) => b.rating - a.rating)
+
+  const stats = [
+    { label: "Happy Customers", value: "50,000+", icon: Users },
+    { label: "Products Sold", value: "200,000+", icon: Package },
+    { label: "Design Templates", value: "1,000+", icon: Palette },
+    { label: "Countries Served", value: "25+", icon: Award },
+  ]
 
   const features = [
     {
       icon: Palette,
       title: "Custom Design Studio",
-      description: "Create unique designs with our advanced editor and canvas tools",
-      color: "bg-purple-100 text-purple-600",
+      description: "Create unique designs with our advanced design tools",
+    },
+    {
+      icon: Shield,
+      title: "Premium Quality",
+      description: "High-quality materials and printing for lasting products",
     },
     {
       icon: Truck,
       title: "Fast Shipping",
-      description: "Quick delivery with real-time tracking via Shiprocket integration",
-      color: "bg-blue-100 text-blue-600",
+      description: "Quick delivery to your doorstep with tracking",
     },
     {
-      icon: Shield,
-      title: "Secure Payments",
-      description: "Multiple payment options with SSL encryption and security",
-      color: "bg-green-100 text-green-600",
+      icon: Headphones,
+      title: "24/7 Support",
+      description: "Round-the-clock customer support for all your needs",
     },
-    {
-      icon: Users,
-      title: "Marketplace",
-      description: "Join thousands of sellers and buyers in our growing community",
-      color: "bg-orange-100 text-orange-600",
-    },
-  ]
-
-  const stats = [
-    { icon: Users, label: "Happy Customers", value: "50,000+", color: "text-blue-600" },
-    { icon: Package, label: "Products Sold", value: "200,000+", color: "text-green-600" },
-    { icon: Award, label: "5-Star Reviews", value: "25,000+", color: "text-yellow-600" },
-    { icon: Zap, label: "Orders Delivered", value: "180,000+", color: "text-purple-600" },
   ]
 
   return (
@@ -109,28 +191,26 @@ export default async function HomePage() {
       {/* Hero Section */}
       <section className="relative bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 text-white overflow-hidden">
         <div className="absolute inset-0 bg-black/20"></div>
-        <div className="absolute inset-0 bg-[url('/placeholder.svg?height=800&width=1200')] opacity-10"></div>
-        <div className="relative container mx-auto px-4 py-20 lg:py-32">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
+        <div className="relative container py-20 lg:py-32">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div className="space-y-8">
               <div className="space-y-4">
-                <Badge className="bg-white/20 text-white border-white/30 hover:bg-white/30 text-sm px-4 py-2">
-                  🎨 Print-on-Demand Platform
-                </Badge>
+                <Badge className="bg-white/20 text-white border-white/30">🎨 Design Studio Now Live</Badge>
                 <h1 className="text-4xl lg:text-6xl font-bold leading-tight">
-                  Create, Customize &<br />
-                  <span className="text-yellow-300">Sell</span> with
-                  <span className="text-pink-300"> Draprly</span>
+                  Create & Sell
+                  <span className="block bg-gradient-to-r from-yellow-300 to-orange-300 bg-clip-text text-transparent">
+                    Custom Products
+                  </span>
                 </h1>
-                <p className="text-xl text-white/90 max-w-lg leading-relaxed">
-                  Transform your ideas into premium custom clothing and accessories. Design, print, and sell with our
-                  all-in-one e-commerce platform.
+                <p className="text-xl text-blue-100 leading-relaxed">
+                  Transform your creativity into premium custom clothing, accessories, and more. Design, print, and sell
+                  with our comprehensive e-commerce platform.
                 </p>
               </div>
 
               <div className="flex flex-col sm:flex-row gap-4">
                 <Link href="/design">
-                  <Button size="lg" className="bg-white text-blue-600 hover:bg-gray-100 px-8 py-4 text-lg">
+                  <Button size="lg" className="bg-white text-blue-600 hover:bg-gray-100 font-semibold">
                     <Palette className="mr-2 h-5 w-5" />
                     Start Designing
                   </Button>
@@ -139,57 +219,70 @@ export default async function HomePage() {
                   <Button
                     size="lg"
                     variant="outline"
-                    className="border-white text-white hover:bg-white/10 bg-transparent px-8 py-4 text-lg"
+                    className="border-white text-white hover:bg-white/10 bg-transparent"
                   >
-                    <ShoppingCart className="mr-2 h-5 w-5" />
                     Browse Products
+                    <ArrowRight className="ml-2 h-5 w-5" />
                   </Button>
                 </Link>
               </div>
 
-              <div className="flex items-center gap-8 text-sm">
-                <div className="flex items-center gap-2">
-                  <div className="flex -space-x-2">
-                    {[1, 2, 3, 4].map((i) => (
-                      <div key={i} className="w-8 h-8 rounded-full bg-white/20 border-2 border-white"></div>
-                    ))}
-                  </div>
-                  <span>50,000+ Happy Customers</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Star className="h-4 w-4 fill-yellow-300 text-yellow-300" />
+              <div className="flex items-center space-x-8 text-sm">
+                <div className="flex items-center space-x-2">
+                  <Star className="h-5 w-5 text-yellow-300 fill-current" />
                   <span>4.9/5 Rating</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Shield className="h-5 w-5" />
+                  <span>Secure Platform</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Truck className="h-5 w-5" />
+                  <span>Fast Delivery</span>
                 </div>
               </div>
             </div>
 
             <div className="relative">
-              <div className="relative z-10">
-                <Image
-                  src="/placeholder.svg?height=500&width=500"
-                  alt="Draprly Design Studio"
-                  width={500}
-                  height={500}
-                  className="rounded-2xl shadow-2xl"
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-4">
+                  <img
+                    src="/placeholder.svg?height=200&width=200&text=Custom+T-Shirt"
+                    alt="Custom T-Shirt"
+                    className="w-full h-48 object-cover rounded-lg shadow-2xl"
+                  />
+                  <img
+                    src="/placeholder.svg?height=150&width=200&text=Custom+Mug"
+                    alt="Custom Mug"
+                    className="w-full h-36 object-cover rounded-lg shadow-2xl"
+                  />
+                </div>
+                <div className="space-y-4 mt-8">
+                  <img
+                    src="/placeholder.svg?height=150&width=200&text=Custom+Hoodie"
+                    alt="Custom Hoodie"
+                    className="w-full h-36 object-cover rounded-lg shadow-2xl"
+                  />
+                  <img
+                    src="/placeholder.svg?height=200&width=200&text=Mobile+Cover"
+                    alt="Mobile Cover"
+                    className="w-full h-48 object-cover rounded-lg shadow-2xl"
+                  />
+                </div>
               </div>
-              <div className="absolute -top-4 -right-4 w-full h-full bg-gradient-to-br from-yellow-400 to-pink-400 rounded-2xl opacity-20"></div>
-              <div className="absolute -bottom-4 -left-4 w-full h-full bg-gradient-to-br from-green-400 to-blue-400 rounded-2xl opacity-15"></div>
             </div>
           </div>
         </div>
       </section>
 
       {/* Stats Section */}
-      <section className="py-16 bg-white">
-        <div className="container mx-auto px-4">
+      <section className="py-16 bg-gray-50">
+        <div className="container">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
             {stats.map((stat, index) => (
               <div key={index} className="text-center">
-                <div
-                  className={`w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 flex items-center justify-center ${stat.color}`}
-                >
-                  <stat.icon className="h-8 w-8" />
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
+                  <stat.icon className="h-8 w-8 text-blue-600" />
                 </div>
                 <div className="text-3xl font-bold text-gray-900 mb-2">{stat.value}</div>
                 <div className="text-gray-600">{stat.label}</div>
@@ -199,27 +292,48 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Features Section */}
-      <section className="py-20 bg-gray-50">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">Why Choose Draprly?</h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Everything you need to create, customize, and sell premium products online
-            </p>
+      {/* Categories Section */}
+      <section className="py-16">
+        <div className="container">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">Shop by Category</h2>
+            <p className="text-xl text-gray-600">Discover our wide range of customizable products</p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
+            {categories.map((category, index) => (
+              <Link key={index} href={`/products?category=${encodeURIComponent(category.name)}`}>
+                <Card className="hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer">
+                  <CardContent className="p-6 text-center">
+                    <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-4">
+                      <category.icon className={`h-8 w-8 ${category.color}`} />
+                    </div>
+                    <h3 className="font-semibold text-gray-900 mb-2">{category.name}</h3>
+                    <p className="text-sm text-gray-600">{category.count} products</p>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Features Section */}
+      <section className="py-16 bg-gray-50">
+        <div className="container">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">Why Choose Draprly?</h2>
+            <p className="text-xl text-gray-600">Everything you need to create and sell custom products</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {features.map((feature, index) => (
-              <Card
-                key={index}
-                className="text-center p-6 hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
-              >
-                <CardContent className="space-y-4">
-                  <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto ${feature.color}`}>
-                    <feature.icon className="h-8 w-8" />
+              <Card key={index} className="text-center hover:shadow-lg transition-shadow">
+                <CardContent className="p-6">
+                  <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
+                    <feature.icon className="h-8 w-8 text-blue-600" />
                   </div>
-                  <h3 className="text-xl font-semibold text-gray-900">{feature.title}</h3>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">{feature.title}</h3>
                   <p className="text-gray-600">{feature.description}</p>
                 </CardContent>
               </Card>
@@ -228,159 +342,207 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Featured Products */}
-      <section className="py-20">
-        <div className="container mx-auto px-4">
-          <div className="flex justify-between items-center mb-12">
-            <div>
-              <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">Featured Products</h2>
-              <p className="text-xl text-gray-600">Handpicked designs from our top creators</p>
-            </div>
-            <Link href="/products?filter=featured">
-              <Button variant="outline" className="hidden sm:flex bg-transparent">
-                View All Featured
+      {/* Products Section */}
+      <section className="py-16">
+        <div className="container">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">Explore Our Products</h2>
+            <p className="text-xl text-gray-600">Discover trending designs and create your own</p>
+          </div>
+
+          <Tabs defaultValue="featured" className="w-full">
+            <TabsList className="grid w-full grid-cols-4 mb-8">
+              <TabsTrigger value="featured" className="flex items-center">
+                <Star className="mr-2 h-4 w-4" />
+                Featured
+              </TabsTrigger>
+              <TabsTrigger value="newest" className="flex items-center">
+                <Zap className="mr-2 h-4 w-4" />
+                Newest
+              </TabsTrigger>
+              <TabsTrigger value="trending" className="flex items-center">
+                <TrendingUp className="mr-2 h-4 w-4" />
+                Trending
+              </TabsTrigger>
+              <TabsTrigger value="recommended" className="flex items-center">
+                <Heart className="mr-2 h-4 w-4" />
+                Recommended
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="featured">
+              <ProductGrid products={featuredProducts} loading={loading} onAddToCart={addToCart} />
+            </TabsContent>
+
+            <TabsContent value="newest">
+              <ProductGrid products={newestProducts} loading={loading} onAddToCart={addToCart} />
+            </TabsContent>
+
+            <TabsContent value="trending">
+              <ProductGrid products={trendingProducts} loading={loading} onAddToCart={addToCart} />
+            </TabsContent>
+
+            <TabsContent value="recommended">
+              <ProductGrid products={recommendedProducts} loading={loading} onAddToCart={addToCart} />
+            </TabsContent>
+          </Tabs>
+
+          <div className="text-center mt-12">
+            <Link href="/products">
+              <Button size="lg" variant="outline">
+                View All Products
+                <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>
-          </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {featuredProducts.slice(0, 4).map((product: any) => (
-              <ProductCard key={product._id} product={product} />
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Newest Products */}
-      <section className="py-20 bg-gray-50">
-        <div className="container mx-auto px-4">
-          <div className="flex justify-between items-center mb-12">
-            <div>
-              <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
-                <span className="flex items-center">
-                  <Zap className="h-8 w-8 mr-3 text-blue-600" />
-                  Newest Arrivals
-                </span>
-              </h2>
-              <p className="text-xl text-gray-600">Fresh designs just added to our collection</p>
-            </div>
-            <Link href="/products?sort=newest">
-              <Button variant="outline" className="hidden sm:flex bg-transparent">
-                View All New
-              </Button>
-            </Link>
-          </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {newestProducts.slice(0, 4).map((product: any) => (
-              <ProductCard key={product._id} product={product} />
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Trending Products */}
-      <section className="py-20">
-        <div className="container mx-auto px-4">
-          <div className="flex justify-between items-center mb-12">
-            <div>
-              <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
-                <span className="flex items-center">
-                  <TrendingUp className="h-8 w-8 mr-3 text-green-600" />
-                  Trending Now
-                </span>
-              </h2>
-              <p className="text-xl text-gray-600">Most popular products this week</p>
-            </div>
-            <Link href="/products?sort=trending">
-              <Button variant="outline" className="hidden sm:flex bg-transparent">
-                View All Trending
-              </Button>
-            </Link>
-          </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {trendingProducts.slice(0, 4).map((product: any) => (
-              <ProductCard key={product._id} product={product} />
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Recommended Products */}
-      <section className="py-20 bg-gray-50">
-        <div className="container mx-auto px-4">
-          <div className="flex justify-between items-center mb-12">
-            <div>
-              <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
-                <span className="flex items-center">
-                  <Heart className="h-8 w-8 mr-3 text-red-600" />
-                  Recommended for You
-                </span>
-              </h2>
-              <p className="text-xl text-gray-600">Curated picks based on your interests</p>
-            </div>
-            <Link href="/products?sort=recommended">
-              <Button variant="outline" className="hidden sm:flex bg-transparent">
-                View All Recommended
-              </Button>
-            </Link>
-          </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {recommendedProducts.slice(0, 4).map((product: any) => (
-              <ProductCard key={product._id} product={product} />
-            ))}
           </div>
         </div>
       </section>
 
       {/* Newsletter Section */}
-      <section className="py-20 bg-gradient-to-r from-purple-600 to-blue-600 text-white">
-        <div className="container mx-auto px-4 text-center">
-          <div className="max-w-2xl mx-auto">
+      <section className="py-16 bg-gradient-to-r from-blue-600 to-purple-600 text-white">
+        <div className="container">
+          <div className="max-w-2xl mx-auto text-center">
             <h2 className="text-3xl lg:text-4xl font-bold mb-4">Stay Updated</h2>
-            <p className="text-xl mb-8 opacity-90">
-              Get the latest designs, exclusive offers, and design tips delivered to your inbox
+            <p className="text-xl text-blue-100 mb-8">
+              Get the latest designs, offers, and updates delivered to your inbox
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
-              <input
+
+            <form onSubmit={handleNewsletterSubmit} className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
+              <Input
                 type="email"
                 placeholder="Enter your email"
-                className="flex-1 px-4 py-3 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-white"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="flex-1 bg-white/10 border-white/20 text-white placeholder:text-white/70"
+                required
               />
-              <Button className="bg-white text-purple-600 hover:bg-gray-100 px-8 py-3">Subscribe</Button>
-            </div>
-            <p className="text-sm opacity-75 mt-4">No spam, unsubscribe at any time. We respect your privacy.</p>
+              <Button
+                type="submit"
+                disabled={subscribing}
+                className="bg-white text-blue-600 hover:bg-gray-100 font-semibold"
+              >
+                {subscribing ? "Subscribing..." : "Subscribe"}
+              </Button>
+            </form>
           </div>
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-gradient-to-r from-blue-600 to-purple-600 text-white">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl lg:text-4xl font-bold mb-4">Ready to Start Your Design Journey?</h2>
-          <p className="text-xl mb-8 max-w-2xl mx-auto">
-            Join thousands of creators who trust Draprly for their custom printing needs
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/auth/register">
-              <Button size="lg" className="bg-white text-blue-600 hover:bg-gray-100 px-8 py-4 text-lg">
-                Get Started Free
-              </Button>
-            </Link>
-            <Link href="/about">
-              <Button
-                size="lg"
-                variant="outline"
-                className="border-white text-white hover:bg-white/10 bg-transparent px-8 py-4 text-lg"
-              >
-                Learn More
-              </Button>
-            </Link>
-          </div>
+      <section className="py-16">
+        <div className="container">
+          <Card className="bg-gradient-to-r from-gray-900 to-gray-800 text-white">
+            <CardContent className="p-12 text-center">
+              <h2 className="text-3xl lg:text-4xl font-bold mb-4">Ready to Start Creating?</h2>
+              <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
+                Join thousands of creators who are already making money with their custom designs
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Link href="/design">
+                  <Button size="lg" className="bg-blue-600 hover:bg-blue-700">
+                    <Palette className="mr-2 h-5 w-5" />
+                    Start Designing Now
+                  </Button>
+                </Link>
+                <Link href="/seller/register">
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="border-white text-white hover:bg-white/10 bg-transparent"
+                  >
+                    Become a Seller
+                  </Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </section>
+    </div>
+  )
+}
+
+function ProductGrid({
+  products,
+  loading,
+  onAddToCart,
+}: {
+  products: Product[]
+  loading: boolean
+  onAddToCart: (product: Product) => void
+}) {
+  if (loading) {
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+          <Card key={i} className="animate-pulse">
+            <div className="aspect-square bg-gray-200 rounded-t-lg"></div>
+            <CardContent className="p-4">
+              <div className="h-4 bg-gray-200 rounded mb-2"></div>
+              <div className="h-4 bg-gray-200 rounded w-2/3 mb-2"></div>
+              <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    )
+  }
+
+  if (products.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <Package className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+        <p className="text-gray-600 text-lg">No products found</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      {products.slice(0, 8).map((product) => (
+        <Card key={product._id} className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+          <div className="relative aspect-square overflow-hidden rounded-t-lg">
+            <img
+              src={product.images[0] || "/placeholder.svg"}
+              alt={product.name}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            />
+            {product.originalPrice && product.originalPrice > product.price && (
+              <Badge className="absolute top-2 left-2 bg-red-500">
+                {Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}% OFF
+              </Badge>
+            )}
+            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 flex items-center justify-center">
+              <Button
+                onClick={() => onAddToCart(product)}
+                className="opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+              >
+                <ShoppingCart className="mr-2 h-4 w-4" />
+                Add to Cart
+              </Button>
+            </div>
+          </div>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between mb-2">
+              <Badge variant="outline">{product.category}</Badge>
+              <div className="flex items-center">
+                <Star className="h-4 w-4 text-yellow-500 fill-current" />
+                <span className="ml-1 text-sm text-gray-600">{product.rating.toFixed(1)}</span>
+              </div>
+            </div>
+            <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2">{product.name}</h3>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <span className="text-lg font-bold text-gray-900">₹{product.price.toLocaleString()}</span>
+                {product.originalPrice && product.originalPrice > product.price && (
+                  <span className="text-sm text-gray-500 line-through">₹{product.originalPrice.toLocaleString()}</span>
+                )}
+              </div>
+              <span className="text-sm text-gray-600">{product.sold} sold</span>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
     </div>
   )
 }
