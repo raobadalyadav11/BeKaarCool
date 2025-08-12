@@ -6,12 +6,10 @@ import { useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Star, ShoppingCart, Heart, Eye } from "lucide-react"
+import { Star, ShoppingCart, Heart, Eye, Sparkles } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 import { useToast } from "@/hooks/use-toast"
-import { useAppDispatch } from "@/store"
-import { addToCart } from "@/store/slices/cart-slice"
 
 interface ProductCardProps {
   product: any
@@ -20,31 +18,45 @@ interface ProductCardProps {
 
 export function ProductCard({ product, viewMode = "grid" }: ProductCardProps) {
   const [isWishlisted, setIsWishlisted] = useState(false)
-  const dispatch = useAppDispatch()
+  const [isLoading, setIsLoading] = useState(false)
   const { toast } = useToast()
 
   const handleAddToCart = async (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
 
-    try {
-      await dispatch(addToCart({
-        productId: product._id,
-        quantity: 1,
-        size: product.sizes?.[0] || "M",
-        color: product.colors?.[0] || "Black",
-      })).unwrap()
+    if (product.stock === 0) return
 
-      toast({
-        title: "Added to cart!",
-        description: `${product.name} has been added to your cart.`,
+    setIsLoading(true)
+    try {
+      const response = await fetch("/api/cart", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          productId: product._id,
+          quantity: 1,
+          size: product.variations?.sizes?.[0] || "M",
+          color: product.variations?.colors?.[0] || "Black",
+        }),
       })
+
+      if (response.ok) {
+        toast({
+          title: "Added to cart!",
+          description: `${product.name} has been added to your cart.`,
+        })
+      } else {
+        const error = await response.json()
+        throw new Error(error.message || "Failed to add to cart")
+      }
     } catch (error: any) {
       toast({
         title: "Error",
-        description: error.message || "Failed to add item to cart",
+        description: error.message || "Please login to add items to cart.",
         variant: "destructive",
       })
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -59,10 +71,14 @@ export function ProductCard({ product, viewMode = "grid" }: ProductCardProps) {
     })
   }
 
+  const discountPercentage = product.originalPrice && product.originalPrice > product.price 
+    ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
+    : 0
+
   return (
     <Link href={`/products/${product._id}`} className="block">
       <Card
-        className={`group hover:shadow-xl transition-all duration-300 overflow-hidden cursor-pointer ${
+        className={`group hover:shadow-xl transition-all duration-300 overflow-hidden cursor-pointer border-0 shadow-md hover:shadow-2xl ${
           viewMode === "list" ? "flex" : ""
         }`}
       >
@@ -77,64 +93,92 @@ export function ProductCard({ product, viewMode = "grid" }: ProductCardProps) {
             }`}
           />
 
-          {product.badge && <Badge className="absolute top-4 left-4 bg-red-500 text-white">{product.badge}</Badge>}
-
-          {product.originalPrice && product.originalPrice > product.price && (
-            <Badge className="absolute top-4 right-4 bg-green-500 text-white">
-              {Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}% OFF
+          {/* Featured Badge */}
+          {product.featured && (
+            <Badge className="absolute top-3 left-3 bg-gradient-to-r from-yellow-400 to-orange-500 text-white border-0 shadow-lg">
+              <Sparkles className="w-3 h-3 mr-1" />
+              Featured
             </Badge>
           )}
 
-          <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity space-y-2">
-            <Button size="sm" variant="secondary" onClick={handleWishlist} className="w-10 h-10 p-0">
-              <Heart className={`h-4 w-4 ${isWishlisted ? "fill-red-500 text-red-500" : ""}`} />
-            </Button>
-            <Button size="sm" variant="secondary" className="w-10 h-10 p-0">
-              <Eye className="h-4 w-4" />
-            </Button>
+          {/* Discount Badge */}
+          {discountPercentage > 0 && (
+            <Badge className="absolute top-3 right-3 bg-gradient-to-r from-green-500 to-green-600 text-white border-0 shadow-lg">
+              {discountPercentage}% OFF
+            </Badge>
+          )}
+
+          {/* Hover Actions */}
+          <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity space-y-2">
+            {!discountPercentage && (
+              <>
+                <Button size="sm" variant="secondary" onClick={handleWishlist} className="w-10 h-10 p-0 bg-white/90 hover:bg-white shadow-lg">
+                  <Heart className={`h-4 w-4 ${isWishlisted ? "fill-red-500 text-red-500" : "text-gray-600"}`} />
+                </Button>
+                <Button size="sm" variant="secondary" className="w-10 h-10 p-0 bg-white/90 hover:bg-white shadow-lg">
+                  <Eye className="h-4 w-4 text-gray-600" />
+                </Button>
+              </>
+            )}
           </div>
 
+          {/* Out of Stock Overlay */}
           {product.stock === 0 && (
-            <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-              <Badge variant="destructive" className="text-lg">
+            <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+              <Badge variant="destructive" className="text-lg px-4 py-2">
                 Out of Stock
               </Badge>
             </div>
+          )}
+
+          {/* Customizable Badge */}
+          {product.customizable && (
+            <Badge className="absolute bottom-3 left-3 bg-blue-500 text-white border-0">
+              Customizable
+            </Badge>
           )}
         </div>
 
         <CardContent className={`p-6 ${viewMode === "list" ? "flex-1" : ""}`}>
           <div className={viewMode === "list" ? "flex justify-between items-start" : ""}>
             <div className={viewMode === "list" ? "flex-1" : ""}>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2 line-clamp-2">{product.name}</h3>
+              {/* Product Name */}
+              <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors">
+                {product.name}
+              </h3>
 
-              <div className="flex items-center gap-2 mb-3">
+              {/* Rating and Stats */}
+              <div className="flex items-center gap-3 mb-3">
                 <div className="flex items-center">
                   {[...Array(5)].map((_, i) => (
                     <Star
                       key={i}
                       className={`h-4 w-4 ${
-                        i < Math.floor(product.averageRating || 0) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
+                        i < Math.floor(product.rating || 0) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
                       }`}
                     />
                   ))}
                 </div>
-                <span className="text-sm text-gray-600">({product.reviewCount || 0})</span>
-                {product.views && <span className="text-sm text-gray-500">• {product.views} views</span>}
+                <span className="text-sm text-gray-600">({product.reviews?.length || 0})</span>
+                {product.sold > 0 && (
+                  <span className="text-sm text-green-600 font-medium">{product.sold} sold</span>
+                )}
               </div>
 
+              {/* Description for List View */}
               {viewMode === "list" && (
                 <div className="mb-4">
                   <p className="text-gray-600 text-sm line-clamp-2 mb-2">{product.description}</p>
-                  {product.sizes && product.sizes.length > 0 && (
-                    <p className="text-gray-600 text-sm mb-1">Sizes: {product.sizes.join(", ")}</p>
+                  {product.variations?.sizes && product.variations.sizes.length > 0 && (
+                    <p className="text-gray-600 text-sm mb-1">Sizes: {product.variations.sizes.join(", ")}</p>
                   )}
-                  {product.colors && product.colors.length > 0 && (
-                    <p className="text-gray-600 text-sm">Colors: {product.colors.join(", ")}</p>
+                  {product.variations?.colors && product.variations.colors.length > 0 && (
+                    <p className="text-gray-600 text-sm">Colors: {product.variations.colors.join(", ")}</p>
                   )}
                 </div>
               )}
 
+              {/* Price */}
               <div className="flex items-center gap-2 mb-4">
                 <span className="text-2xl font-bold text-gray-900">₹{product.price}</span>
                 {product.originalPrice && product.originalPrice > product.price && (
@@ -142,21 +186,35 @@ export function ProductCard({ product, viewMode = "grid" }: ProductCardProps) {
                 )}
               </div>
 
+              {/* Seller Info */}
               {product.seller && (
                 <p className="text-sm text-gray-600 mb-4">
-                  by <span className="font-medium">{product.seller.name}</span>
+                  by <span className="font-medium text-blue-600">{product.seller.name}</span>
                 </p>
               )}
+
+              {/* Category and Tags */}
+              <div className="flex items-center gap-2 mb-4">
+                <Badge variant="outline" className="text-xs">
+                  {product.category}
+                </Badge>
+                {product.brand && (
+                  <Badge variant="outline" className="text-xs">
+                    {product.brand}
+                  </Badge>
+                )}
+              </div>
             </div>
 
-            <div className={`${viewMode === "list" ? "text-right ml-4" : "flex items-center justify-between"}`}>
+            {/* Add to Cart Button */}
+            <div className={`${viewMode === "list" ? "text-right ml-4" : ""}`}>
               <Button
                 onClick={handleAddToCart}
-                disabled={product.stock === 0}
-                className={viewMode === "list" ? "w-full" : ""}
+                disabled={product.stock === 0 || isLoading}
+                className={`${viewMode === "list" ? "w-full" : "w-full"} bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 border-0 shadow-lg`}
               >
                 <ShoppingCart className="mr-2 h-4 w-4" />
-                {product.stock === 0 ? "Out of Stock" : "Add to Cart"}
+                {isLoading ? "Adding..." : product.stock === 0 ? "Out of Stock" : "Add to Cart"}
               </Button>
             </div>
           </div>
