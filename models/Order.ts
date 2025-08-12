@@ -125,9 +125,16 @@ const orderSchema = new mongoose.Schema({
   estimatedDelivery: Date,
   deliveredAt: Date,
   cancelledAt: Date,
+  cancellationReason: String,
   refundedAt: Date,
   refundAmount: Number,
+  refundReason: String,
   notes: String,
+  affiliateCode: String,
+  affiliateCommission: {
+    type: Number,
+    default: 0,
+  },
   createdAt: {
     type: Date,
     default: Date.now,

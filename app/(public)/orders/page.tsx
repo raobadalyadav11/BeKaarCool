@@ -8,10 +8,13 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Package, Search, Eye, Download, RefreshCw, Truck, CheckCircle, XCircle } from "lucide-react"
+import { Package, Search, Eye, Download, RefreshCw, Truck, CheckCircle, XCircle, X, AlertTriangle } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { formatDate } from "@/lib/utils"
+import { toast } from "sonner"
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
+import { Textarea } from "@/components/ui/textarea"
 
 interface Order {
   _id: string
@@ -47,6 +50,8 @@ export default function OrdersPage() {
     total: 0,
     pages: 0,
   })
+  const [cancelReason, setCancelReason] = useState("")
+  const [cancellingOrderId, setCancellingOrderId] = useState<string | null>(null)
 
   useEffect(() => {
     if (session) {
@@ -123,6 +128,74 @@ export default function OrdersPage() {
       order.orderNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
       order.items.some((item) => item.product.name.toLowerCase().includes(searchQuery.toLowerCase())),
   )
+
+  const handleCancelOrder = async (orderId: string) => {
+    if (!cancelReason.trim()) {
+      toast.error("Please provide a reason for cancellation")
+      return
+    }
+
+    setCancellingOrderId(orderId)
+    try {
+      const response = await fetch(`/api/orders/${orderId}/cancel`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reason: cancelReason }),
+      })
+
+      if (response.ok) {
+        toast.success("Order cancelled successfully")
+        fetchOrders()
+        setCancelReason("")
+      } else {
+        const data = await response.json()
+        toast.error(data.message || "Failed to cancel order")
+      }
+    } catch (error) {
+      toast.error("Failed to cancel order")
+    } finally {
+      setCancellingOrderId(null)
+    }
+  }
+
+  const handleDownloadInvoice = async (orderId: string) => {
+    try {
+      const response = await fetch(`/api/orders/${orderId}/invoice`)
+      if (response.ok) {
+        const invoice = await response.json()
+        // Create a simple invoice download - in production, generate PDF
+        const invoiceData = JSON.stringify(invoice, null, 2)
+        const blob = new Blob([invoiceData], { type: "application/json" })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement("a")
+        a.href = url
+        a.download = `invoice-${invoice.orderNumber}.json`
+        a.click()
+        URL.revokeObjectURL(url)
+        toast.success("Invoice downloaded")
+      } else {
+        toast.error("Failed to download invoice")
+      }
+    } catch (error) {
+      toast.error("Failed to download invoice")
+    }
+  }
+
+  const handleTrackOrder = async (orderId: string) => {
+    try {
+      const response = await fetch(`/api/orders/${orderId}/track`)
+      if (response.ok) {
+        const trackingData = await response.json()
+        // Show tracking info in a modal or redirect to tracking page
+        toast.success("Tracking information loaded")
+        console.log(trackingData) // For now, log to console
+      } else {
+        toast.error("No tracking information available")
+      }
+    } catch (error) {
+      toast.error("Failed to fetch tracking information")
+    }
+  }
 
   if (!session) {
     return (
@@ -202,14 +275,25 @@ export default function OrdersPage() {
               ))}
             </div>
           ) : filteredOrders.length === 0 ? (
-            <Card>
+            <Card className="border-dashed border-2">
               <CardContent className="p-12 text-center">
-                <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No orders found</h3>
-                <p className="text-gray-600 mb-4">You haven't placed any orders yet.</p>
-                <Link href="/products">
-                  <Button>Start Shopping</Button>
-                </Link>
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Package className="h-8 w-8 text-gray-400" />
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">No orders found</h3>
+                <p className="text-gray-600 mb-6 max-w-sm mx-auto">
+                  {searchQuery || statusFilter !== "all" 
+                    ? "No orders match your current filters. Try adjusting your search or filter criteria."
+                    : "You haven't placed any orders yet. Start shopping to see your orders here."
+                  }
+                </p>
+                {!searchQuery && statusFilter === "all" && (
+                  <Link href="/products">
+                    <Button size="lg" className="px-8">
+                      Start Shopping
+                    </Button>
+                  </Link>
+                )}
               </CardContent>
             </Card>
           ) : (
@@ -238,16 +322,28 @@ export default function OrdersPage() {
                           <div className="relative h-16 w-16 rounded-md overflow-hidden bg-gray-100">
                             <Image
                               src={item.product?.images?.[0] || "/placeholder.svg"}
-                              alt={item.product?.name}
+                              alt={item.product?.name || "Product image"}
                               fill
                               className="object-cover"
                             />
                           </div>
-                          <div className="flex-1">
-                            <h4 className="font-medium text-gray-900">{item.product?.name}</h4>
-                            <p className="text-sm text-gray-600">
-                              Size: {item.size} • Color: {item.color} • Qty: {item.quantity}
-                            </p>
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-medium text-gray-900 truncate">{item.product?.name || "Product"}</h4>
+                            <div className="flex flex-wrap gap-2 mt-1">
+                              {item.size && (
+                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-800">
+                                  Size: {item.size}
+                                </span>
+                              )}
+                              {item.color && (
+                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-800">
+                                  {item.color}
+                                </span>
+                              )}
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
+                                Qty: {item.quantity}
+                              </span>
+                            </div>
                           </div>
                           <div className="text-right">
                             <p className="font-medium">₹{item.price}</p>
@@ -282,15 +378,65 @@ export default function OrdersPage() {
                             </Button>
                           </Link>
                           {order.trackingNumber && (
-                            <Button variant="outline" size="sm">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleTrackOrder(order._id)}
+                            >
                               <Truck className="mr-2 h-4 w-4" />
                               Track Order
                             </Button>
                           )}
-                          <Button variant="outline" size="sm">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleDownloadInvoice(order._id)}
+                          >
                             <Download className="mr-2 h-4 w-4" />
                             Invoice
                           </Button>
+                          {["pending", "confirmed"].includes(order.status) && (
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
+                                  <X className="mr-2 h-4 w-4" />
+                                  Cancel
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle className="flex items-center">
+                                    <AlertTriangle className="mr-2 h-5 w-5 text-red-600" />
+                                    Cancel Order
+                                  </AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Are you sure you want to cancel order #{order.orderNumber}? This action cannot be undone.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <div className="my-4">
+                                  <label className="text-sm font-medium">Reason for cancellation:</label>
+                                  <Textarea
+                                    placeholder="Please provide a reason for cancelling this order..."
+                                    value={cancelReason}
+                                    onChange={(e) => setCancelReason(e.target.value)}
+                                    className="mt-2"
+                                  />
+                                </div>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel onClick={() => setCancelReason("")}>
+                                    Keep Order
+                                  </AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => handleCancelOrder(order._id)}
+                                    disabled={cancellingOrderId === order._id || !cancelReason.trim()}
+                                    className="bg-red-600 hover:bg-red-700"
+                                  >
+                                    {cancellingOrderId === order._id ? "Cancelling..." : "Cancel Order"}
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          )}
                         </div>
                       </div>
                     </div>
