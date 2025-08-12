@@ -15,7 +15,9 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { ShoppingCart, CreditCard, Truck, MapPin, Tag, ArrowLeft, Lock, CheckCircle } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { useAppSelector, useAppDispatch } from "@/store"
-import { clearCart, fetchCart } from "@/store/slices/cart-slice"
+import { clearCart, fetchCart, loadFromStorage } from "@/store/slices/cart-slice"
+import { usePincode } from "@/hooks/use-pincode"
+import { clearStoredCart } from "@/lib/localStorage"
 
 declare global {
   interface Window {
@@ -52,6 +54,7 @@ export default function CheckoutPage() {
   })
   const [couponInput, setCouponInput] = useState("")
   const [appliedCoupon, setAppliedCoupon] = useState<any>(null)
+  const { fetchPincodeData, loading: pincodeLoading } = usePincode()
 
   // Use the total from Redux state which already includes all calculations
   const finalTotal = total
@@ -62,19 +65,39 @@ export default function CheckoutPage() {
       return
     }
 
-    // Fetch cart data if not already loaded
-    if (items.length === 0) {
-      dispatch(fetchCart()).then((result) => {
-        // If cart is still empty after fetching, redirect to cart page
-        if (result.payload?.items?.length === 0) {
-          router.push("/cart")
-        }
-      })
-    }
-  }, [session, items, router, dispatch])
+    // Load from localStorage first
+    dispatch(loadFromStorage())
+    
+    // Then fetch from server to sync
+    dispatch(fetchCart())
+  }, [session, dispatch])
 
-  const handleAddressChange = (field: keyof ShippingAddress, value: string) => {
+  // Separate effect to check if cart is empty after loading
+  useEffect(() => {
+    if (session && !loading && items.length === 0) {
+      // Only redirect if we've finished loading and cart is truly empty
+      const timer = setTimeout(() => {
+        router.push("/cart")
+      }, 1000) // Give some time for data to load
+      
+      return () => clearTimeout(timer)
+    }
+  }, [session, loading, items.length, router])
+
+  const handleAddressChange = async (field: keyof ShippingAddress, value: string) => {
     setShippingAddress((prev) => ({ ...prev, [field]: value }))
+    
+    // Auto-fetch city and state when pincode is entered
+    if (field === 'pincode' && value.length === 6) {
+      const pincodeData = await fetchPincodeData(value)
+      if (pincodeData) {
+        setShippingAddress((prev) => ({
+          ...prev,
+          city: pincodeData.district,
+          state: pincodeData.state
+        }))
+      }
+    }
   }
 
   const applyCoupon = async () => {
@@ -133,17 +156,20 @@ export default function CheckoutPage() {
     try {
       const orderData = {
         items: items.map((item) => ({
-          productId: item.id,
-          name: item.name,
-          price: item.price,
+          product: item.id,
           quantity: item.quantity,
-          image: item.image,
+          price: item.price,
+          size: item.size || 'M',
+          color: item.color || 'Default',
         })),
-        totalAmount: finalTotal,
+        total: finalTotal,
+        subtotal: subtotal,
+        shipping: shipping,
+        tax: tax,
+        discount: discount,
         shippingAddress,
         paymentMethod,
-        couponCode: appliedCoupon?.code,
-        discount: appliedCoupon?.discount || 0,
+        couponCode: appliedCoupon?.code || couponCode,
       }
 
       if (paymentMethod === "razorpay") {
@@ -178,7 +204,9 @@ export default function CheckoutPage() {
               const result = await verifyResponse.json()
               if (result.verified && result.order) {
                 dispatch(clearCart())
-                router.push(`/orders/${result.order._id}?success=true`)
+                clearStoredCart()
+                // Immediate redirect without delay
+                window.location.href = `/order-confirmation?orderId=${result.order._id}&success=true`
               } else {
                 throw new Error("Payment verification failed")
               }
@@ -209,7 +237,9 @@ export default function CheckoutPage() {
         if (response.ok) {
           const order = await response.json()
           dispatch(clearCart())
-          router.push(`/orders/${order._id}?success=true`)
+          clearStoredCart()
+          // Immediate redirect without delay
+          window.location.href = `/order-confirmation?orderId=${order._id}&success=true`
         } else {
           throw new Error("Failed to create order")
         }
@@ -284,42 +314,49 @@ export default function CheckoutPage() {
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
-                    <Label htmlFor="city">City *</Label>
+                    <Label htmlFor="pincode">Pincode *</Label>
+                    <div className="relative">
+                      <Input
+                        id="pincode"
+                        value={shippingAddress.pincode}
+                        onChange={(e) => handleAddressChange("pincode", e.target.value)}
+                        placeholder="Enter 6-digit pincode"
+                        maxLength={6}
+                      />
+                      {pincodeLoading && (
+                        <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div>
+                    <Label htmlFor="city">District/City *</Label>
                     <Input
                       id="city"
                       value={shippingAddress.city}
                       onChange={(e) => handleAddressChange("city", e.target.value)}
-                      placeholder="City"
+                      placeholder={pincodeLoading ? "Loading..." : "District/City"}
+                      disabled={pincodeLoading}
                     />
                   </div>
                   <div>
                     <Label htmlFor="state">State *</Label>
-                    <Select onValueChange={(value) => handleAddressChange("state", value)}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select State" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="maharashtra">Maharashtra</SelectItem>
-                        <SelectItem value="delhi">Delhi</SelectItem>
-                        <SelectItem value="karnataka">Karnataka</SelectItem>
-                        <SelectItem value="tamil-nadu">Tamil Nadu</SelectItem>
-                        <SelectItem value="gujarat">Gujarat</SelectItem>
-                        <SelectItem value="rajasthan">Rajasthan</SelectItem>
-                        <SelectItem value="uttar-pradesh">Uttar Pradesh</SelectItem>
-                        <SelectItem value="west-bengal">West Bengal</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label htmlFor="pincode">Pincode *</Label>
                     <Input
-                      id="pincode"
-                      value={shippingAddress.pincode}
-                      onChange={(e) => handleAddressChange("pincode", e.target.value)}
-                      placeholder="Pincode"
+                      id="state"
+                      value={shippingAddress.state}
+                      onChange={(e) => handleAddressChange("state", e.target.value)}
+                      placeholder={pincodeLoading ? "Loading..." : "State"}
+                      disabled={pincodeLoading}
                     />
                   </div>
                 </div>
+                {shippingAddress.pincode.length === 6 && shippingAddress.city && shippingAddress.state && (
+                  <div className="text-xs text-green-600 flex items-center">
+                    <CheckCircle className="h-3 w-3 mr-1" />
+                    Auto-filled from pincode. You can edit these fields if needed.
+                  </div>
+                )}
               </CardContent>
             </Card>
 

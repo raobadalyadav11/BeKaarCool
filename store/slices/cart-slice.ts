@@ -1,4 +1,5 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit"
+import { getStoredCart, setStoredCart, clearStoredCart, getStoredCoupon, setStoredCoupon, clearStoredCoupon } from "@/lib/localStorage"
 
 interface CartItem {
   id: string
@@ -175,6 +176,27 @@ const cartSlice = createSlice({
       state.subtotal = 0
       state.discount = 0
       state.couponCode = undefined
+      clearStoredCart()
+      clearStoredCoupon()
+    },
+    loadFromStorage: (state) => {
+      const storedCart = getStoredCart()
+      const storedCoupon = getStoredCoupon()
+      
+      if (storedCart) {
+        state.items = storedCart.items
+        state.total = storedCart.total
+        state.subtotal = storedCart.subtotal
+        state.shipping = storedCart.shipping
+        state.tax = storedCart.tax
+        state.discount = storedCart.discount
+        state.couponCode = storedCart.couponCode
+      }
+      
+      if (storedCoupon) {
+        state.couponCode = storedCoupon.code
+        state.discount = storedCoupon.discount
+      }
     },
     calculateTotals: (state) => {
       state.subtotal = state.items.reduce((sum, item) => sum + item.price * item.quantity, 0)
@@ -197,6 +219,18 @@ const cartSlice = createSlice({
         state.tax = action.payload.tax
         state.couponCode = action.payload.couponCode
         state.discount = action.payload.discount
+        
+        // Store in localStorage
+        setStoredCart({
+          items: action.payload.items,
+          total: action.payload.total,
+          subtotal: action.payload.subtotal,
+          shipping: action.payload.shipping,
+          tax: action.payload.tax,
+          discount: action.payload.discount,
+          couponCode: action.payload.couponCode,
+          updatedAt: Date.now()
+        })
       })
       .addCase(fetchCart.rejected, (state, action) => {
         state.loading = false
@@ -229,13 +263,22 @@ const cartSlice = createSlice({
       .addCase(applyCoupon.fulfilled, (state, action) => {
         state.discount = action.payload.discount
         state.couponCode = action.payload.couponCode
+        
+        // Store coupon in localStorage
+        setStoredCoupon({
+          code: action.payload.couponCode,
+          discount: action.payload.discount,
+          discountType: 'fixed', // You can enhance this based on API response
+          appliedAt: Date.now()
+        })
       })
       .addCase(removeCoupon.fulfilled, (state, action) => {
         state.discount = 0
         state.couponCode = undefined
+        clearStoredCoupon()
       })
   },
 })
 
-export const { clearCart, calculateTotals } = cartSlice.actions
+export const { clearCart, calculateTotals, loadFromStorage } = cartSlice.actions
 export default cartSlice.reducer

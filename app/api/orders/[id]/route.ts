@@ -26,7 +26,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     const order = await Order.findById(id)
-      .populate("items.product", "name images")
+      .populate("items.product", "name images price category description")
       .populate("user", "name email")
 
     if (!order) {
@@ -84,7 +84,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       id,
       { ...body, updatedAt: new Date() },
       { new: true, runValidators: true },
-    ).populate("items.product", "name images")
+    ).populate("items.product", "name images price category description")
 
     return NextResponse.json(updatedOrder)
   } catch (error) {

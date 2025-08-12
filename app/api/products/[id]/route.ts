@@ -17,7 +17,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     const product = await Product.findById(id)
       .populate("seller", "name email avatar")
-      .populate("reviews", "rating comment user createdAt")
+      // .populate("reviews", "rating comment user createdAt")
 
     if (!product) {
       return NextResponse.json({ message: "Product not found" }, { status: 404 })

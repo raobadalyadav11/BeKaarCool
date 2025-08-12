@@ -54,10 +54,10 @@ export async function POST(request: NextRequest) {
         size: item.size || 'M',
         color: item.color || 'Default',
       })),
-      totalAmount: orderData.totalAmount,
-      subtotal: orderData.totalAmount * 0.85, // Approximate subtotal
-      shipping: orderData.totalAmount > 500 ? 0 : 50,
-      tax: orderData.totalAmount * 0.18, // 18% GST
+      total: orderData.total || orderData.totalAmount,
+      subtotal: Math.round((orderData.total || orderData.totalAmount) * 0.85),
+      shipping: (orderData.total || orderData.totalAmount) > 500 ? 0 : 50,
+      tax: Math.round((orderData.total || orderData.totalAmount) * 0.18)
       discount: orderData.discount || 0,
       couponCode: orderData.couponCode,
       status: "confirmed",
@@ -78,28 +78,24 @@ export async function POST(request: NextRequest) {
 
     await order.save()
 
-    // Update product stock
-    for (const item of orderData.items) {
-      await Product.findByIdAndUpdate(item.productId, {
-        $inc: { stock: -item.quantity, sold: item.quantity },
-      })
-    }
-
-    // Clear cart
-    await Cart.findOneAndUpdate(
-      { user: userId },
-      { items: [], total: 0, discount: 0, couponCode: null }
-    )
-
-    // Send confirmation email
-    try {
-      await sendOrderConfirmationEmail(user.email, user.name, order)
-    } catch (emailError) {
-      console.error("Failed to send order confirmation email:", emailError)
-    }
-
-    // Populate order for response
-    await order.populate("items.product", "name images")
+    // Process these operations in parallel to reduce time
+    const [, ,] = await Promise.all([
+      // Update product stock
+      Promise.all(orderData.items.map((item: any) => 
+        Product.findByIdAndUpdate(item.productId, {
+          $inc: { stock: -item.quantity, sold: item.quantity },
+        })
+      )),
+      // Clear cart
+      Cart.findOneAndUpdate(
+        { user: userId },
+        { items: [], total: 0, discount: 0, couponCode: null }
+      ),
+      // Send confirmation email (don't wait for it)
+      sendOrderConfirmationEmail(user.email, user.name, order).catch(err => 
+        console.error("Email error:", err)
+      )
+    ])
 
     return NextResponse.json({ 
       verified: true, 
@@ -108,7 +104,7 @@ export async function POST(request: NextRequest) {
         _id: order._id,
         orderNumber: order.orderNumber,
         status: order.status,
-        totalAmount: order.totalAmount
+        total: order.total
       }
     })
   } catch (error) {

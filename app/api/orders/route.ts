@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
     }
 
     const orders = await Order.find(filter)
-      .populate("items.product", "name images")
+      .populate("items.product", "name images price category description")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
@@ -172,7 +172,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Populate order for response
-    await order.populate("items.product", "name images")
+    await order.populate("items.product", "name images price category description")
 
     return NextResponse.json(order, { status: 201 })
   } catch (error) {

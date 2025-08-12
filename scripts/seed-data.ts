@@ -6,52 +6,33 @@ import { Coupon } from "@/models/Coupon";
 import { Order } from "@/models/Order";
 import { Review } from "@/models/Review";
 
-// Helper function to generate slug from product name
-function generateSlug(name: string): string {
+const generateSlug = (name: string): string => {
   return name
     .toLowerCase()
-    .replace(/[^a-z0-9\s-]/g, '') // Remove special characters
-    .replace(/\s+/g, '-') // Replace spaces with hyphens
-    .replace(/-+/g, '-') // Replace multiple hyphens with single hyphen
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
     .trim();
-}
+};
 
 const seedData = {
   users: [
     {
       name: "Admin User",
       email: "admin@bekaarcool.com",
-      password: bcrypt.hashSync("admin123", 12), // Fixed: Use hashSync for synchronous hashing
+      password: bcrypt.hashSync("admin123", 12),
       role: "admin",
       isVerified: true,
       isActive: true,
-      avatar: "/placeholder-user.jpg",
-      preferences: {
-        language: "en",
-        currency: "INR",
-        newsletter: true,
-        notifications: true,
-        theme: "light",
-      },
-      createdAt: new Date(),
-      updatedAt: new Date(),
     },
     {
       name: "John Doe",
       email: "john@example.com",
-      password: bcrypt.hashSync("password123", 12), // Fixed: Use hashSync
+      password: bcrypt.hashSync("password123", 12),
       role: "customer",
       isVerified: true,
       isActive: true,
       phone: "+91 98765 43210",
-      avatar: "/placeholder-user.jpg",
-      preferences: {
-        language: "en",
-        currency: "INR",
-        newsletter: true,
-        notifications: true,
-        theme: "light",
-      },
       addresses: [
         {
           type: "home",
@@ -64,206 +45,485 @@ const seedData = {
           isDefault: true,
         },
       ],
-      createdAt: new Date(),
-      updatedAt: new Date(),
     },
     {
       name: "Jane Smith",
       email: "jane@example.com",
-      password: bcrypt.hashSync("password123", 12), // Fixed: Use hashSync
+      password: bcrypt.hashSync("password123", 12),
       role: "seller",
       isVerified: true,
       isActive: true,
       phone: "+91 98765 43211",
-      avatar: "/placeholder-user.jpg",
-      preferences: {
-        language: "en",
-        currency: "INR",
-        newsletter: true,
-        notifications: true,
-        theme: "light",
-      },
-      sellerInfo: {
-        businessName: "Jane's Electronics",
-        gstNumber: "GST123456789",
-        panNumber: "ABCDE1234F",
-        bankDetails: {
-          accountNumber: "1234567890",
-          ifscCode: "HDFC0001234",
-          accountHolderName: "Jane Smith",
-        },
-      },
-      createdAt: new Date(),
-      updatedAt: new Date(),
     },
   ],
   products: [
+    // Fashion - T-Shirts
     {
-      name: "Wireless Bluetooth Headphones",
-      slug: "wireless-bluetooth-headphones",
-      description: "Premium quality wireless headphones with noise cancellation and 30-hour battery life.",
+      name: "Custom Cotton T-Shirt Black",
+      description: "Premium 100% cotton t-shirt perfect for custom printing. Soft, comfortable, and durable.",
+      price: 599,
+      originalPrice: 799,
+      category: "Fashion",
+      subcategory: "T-Shirts",
+      brand: "BeKaarCool",
+      stock: 150,
+      images: ["/placeholder.jpg"],
+      customizable: true,
+      isActive: true,
+      isFeatured: true,
+      rating: 4.5,
+      reviewCount: 89,
+    },
+    {
+      name: "Custom Cotton T-Shirt White",
+      description: "Classic white cotton t-shirt ideal for custom designs and everyday wear.",
+      price: 599,
+      originalPrice: 799,
+      category: "Fashion",
+      subcategory: "T-Shirts",
+      brand: "BeKaarCool",
+      stock: 200,
+      images: ["/placeholder.jpg"],
+      customizable: true,
+      isActive: true,
+      isFeatured: true,
+      rating: 4.6,
+      reviewCount: 124,
+    },
+    {
+      name: "Custom Cotton T-Shirt Navy Blue",
+      description: "Navy blue cotton t-shirt with premium quality fabric for custom printing.",
+      price: 599,
+      originalPrice: 799,
+      category: "Fashion",
+      subcategory: "T-Shirts",
+      brand: "BeKaarCool",
+      stock: 120,
+      images: ["/placeholder.jpg"],
+      customizable: true,
+      isActive: true,
+      rating: 4.4,
+      reviewCount: 67,
+    },
+    {
+      name: "Custom Cotton T-Shirt Red",
+      description: "Vibrant red cotton t-shirt perfect for bold custom designs.",
+      price: 599,
+      originalPrice: 799,
+      category: "Fashion",
+      subcategory: "T-Shirts",
+      brand: "BeKaarCool",
+      stock: 100,
+      images: ["/placeholder.jpg"],
+      customizable: true,
+      isActive: true,
+      rating: 4.3,
+      reviewCount: 45,
+    },
+    {
+      name: "Custom Cotton T-Shirt Gray",
+      description: "Stylish gray cotton t-shirt with excellent print quality and comfort.",
+      price: 599,
+      originalPrice: 799,
+      category: "Fashion",
+      subcategory: "T-Shirts",
+      brand: "BeKaarCool",
+      stock: 110,
+      images: ["/placeholder.jpg"],
+      customizable: true,
+      isActive: true,
+      rating: 4.5,
+      reviewCount: 78,
+    },
+    // Fashion - Hoodies
+    {
+      name: "Premium Custom Hoodie Black",
+      description: "Comfortable black hoodie with custom print options, perfect for winter wear.",
+      price: 1299,
+      originalPrice: 1599,
+      category: "Fashion",
+      subcategory: "Hoodies",
+      brand: "BeKaarCool",
+      stock: 75,
+      images: ["/placeholder.jpg"],
+      customizable: true,
+      isActive: true,
+      isFeatured: true,
+      rating: 4.7,
+      reviewCount: 156,
+    },
+    {
+      name: "Premium Custom Hoodie Gray",
+      description: "Cozy gray hoodie made from premium materials, ideal for custom designs.",
+      price: 1299,
+      originalPrice: 1599,
+      category: "Fashion",
+      subcategory: "Hoodies",
+      brand: "BeKaarCool",
+      stock: 60,
+      images: ["/placeholder.jpg"],
+      customizable: true,
+      isActive: true,
+      rating: 4.6,
+      reviewCount: 98,
+    },
+    {
+      name: "Premium Custom Hoodie Navy",
+      description: "Navy blue hoodie with excellent print quality and comfortable fit.",
+      price: 1299,
+      originalPrice: 1599,
+      category: "Fashion",
+      subcategory: "Hoodies",
+      brand: "BeKaarCool",
+      stock: 50,
+      images: ["/placeholder.jpg"],
+      customizable: true,
+      isActive: true,
+      rating: 4.5,
+      reviewCount: 87,
+    },
+    // Fashion - Polo Shirts
+    {
+      name: "Custom Polo Shirt White",
+      description: "Classic white polo shirt perfect for corporate branding and custom logos.",
+      price: 899,
+      originalPrice: 1199,
+      category: "Fashion",
+      subcategory: "Polo Shirts",
+      brand: "BeKaarCool",
+      stock: 80,
+      images: ["/placeholder.jpg"],
+      customizable: true,
+      isActive: true,
+      rating: 4.4,
+      reviewCount: 65,
+    },
+    {
+      name: "Custom Polo Shirt Black",
+      description: "Elegant black polo shirt with premium fabric quality for professional use.",
+      price: 899,
+      originalPrice: 1199,
+      category: "Fashion",
+      subcategory: "Polo Shirts",
+      brand: "BeKaarCool",
+      stock: 70,
+      images: ["/placeholder.jpg"],
+      customizable: true,
+      isActive: true,
+      rating: 4.3,
+      reviewCount: 54,
+    },
+    // Fashion - Tank Tops
+    {
+      name: "Custom Tank Top Black",
+      description: "Comfortable black tank top perfect for gym wear and custom designs.",
+      price: 399,
+      originalPrice: 599,
+      category: "Fashion",
+      subcategory: "Tank Tops",
+      brand: "BeKaarCool",
+      stock: 90,
+      images: ["/placeholder.jpg"],
+      customizable: true,
+      isActive: true,
+      rating: 4.2,
+      reviewCount: 43,
+    },
+    {
+      name: "Custom Tank Top White",
+      description: "Classic white tank top with excellent breathability and print quality.",
+      price: 399,
+      originalPrice: 599,
+      category: "Fashion",
+      subcategory: "Tank Tops",
+      brand: "BeKaarCool",
+      stock: 85,
+      images: ["/placeholder.jpg"],
+      customizable: true,
+      isActive: true,
+      rating: 4.1,
+      reviewCount: 38,
+    },
+    // Fashion - Sweatshirts
+    {
+      name: "Custom Sweatshirt Gray",
+      description: "Warm and comfortable gray sweatshirt perfect for custom printing.",
+      price: 1099,
+      originalPrice: 1399,
+      category: "Fashion",
+      subcategory: "Sweatshirts",
+      brand: "BeKaarCool",
+      stock: 65,
+      images: ["/placeholder.jpg"],
+      customizable: true,
+      isActive: true,
+      rating: 4.5,
+      reviewCount: 72,
+    },
+    {
+      name: "Custom Sweatshirt Black",
+      description: "Classic black sweatshirt with premium quality fabric and excellent durability.",
+      price: 1099,
+      originalPrice: 1399,
+      category: "Fashion",
+      subcategory: "Sweatshirts",
+      brand: "BeKaarCool",
+      stock: 55,
+      images: ["/placeholder.jpg"],
+      customizable: true,
+      isActive: true,
+      rating: 4.4,
+      reviewCount: 61,
+    },
+    // Electronics
+    {
+      name: "Wireless Bluetooth Headphones Pro",
+      description: "Premium wireless headphones with active noise cancellation and 30-hour battery life.",
       price: 2999,
       originalPrice: 3999,
       category: "Electronics",
       subcategory: "Audio",
       brand: "TechSound",
-      sku: "TS-WH-001",
       stock: 50,
-      reorderLevel: 10,
-      maxStock: 200,
-      images: ["/placeholder.jpg", "/placeholder.jpg", "/placeholder.jpg"],
-      specifications: {
-        "Battery Life": "30 hours",
-        Connectivity: "Bluetooth 5.0",
-        Weight: "250g",
-        Color: "Black",
-        Warranty: "1 year",
-      },
-      features: [
-        "Active Noise Cancellation",
-        "Quick Charge - 5 min for 2 hours",
-        "Premium Sound Quality",
-        "Comfortable Fit",
-      ],
-      tags: ["wireless", "bluetooth", "headphones", "audio"],
+      images: ["/placeholder.jpg"],
       isActive: true,
       isFeatured: true,
-      rating: 4.5,
-      reviewCount: 128,
-      seoTitle: "Best Wireless Bluetooth Headphones - TechSound",
-      seoDescription: "Premium wireless headphones with noise cancellation and long battery life.",
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      rating: 4.6,
+      reviewCount: 234,
     },
     {
-      name: "Smartphone Case - Clear",
-      slug: "smartphone-case-clear",
-      description: "Crystal clear protective case for smartphones with drop protection.",
+      name: "Smartphone Case Clear Protection",
+      description: "Crystal clear protective case with military-grade drop protection for all smartphones.",
       price: 299,
       originalPrice: 499,
       category: "Electronics",
       subcategory: "Accessories",
       brand: "ProtectPro",
-      sku: "PP-SC-002",
-      stock: 100,
-      reorderLevel: 20,
-      maxStock: 500,
-      images: ["/placeholder.jpg", "/placeholder.jpg"],
-      specifications: {
-        Material: "TPU + PC",
-        Compatibility: "Universal",
-        Color: "Clear",
-        "Drop Protection": "Up to 6 feet",
-      },
-      features: ["Crystal Clear Design", "Drop Protection", "Easy Installation", "Wireless Charging Compatible"],
-      tags: ["phone case", "clear", "protection", "accessories"],
+      stock: 200,
+      images: ["/placeholder.jpg"],
       isActive: true,
-      isFeatured: false,
       rating: 4.2,
-      reviewCount: 89,
-      seoTitle: "Clear Smartphone Case with Drop Protection",
-      seoDescription: "Protect your phone with our crystal clear case featuring drop protection.",
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      reviewCount: 167,
     },
     {
-      name: "Cotton T-Shirt - Navy Blue",
-      slug: "cotton-t-shirt-navy-blue",
-      description: "Comfortable 100% cotton t-shirt perfect for casual wear.",
-      price: 599,
-      originalPrice: 799,
-      category: "Fashion",
-      subcategory: "Men's Clothing",
-      brand: "ComfortWear",
-      sku: "CW-TS-003",
+      name: "Wireless Charging Pad Fast",
+      description: "Fast wireless charging pad compatible with all Qi-enabled devices.",
+      price: 1299,
+      originalPrice: 1699,
+      category: "Electronics",
+      subcategory: "Accessories",
+      brand: "ChargeTech",
       stock: 75,
-      reorderLevel: 15,
-      maxStock: 300,
-      images: ["/placeholder.jpg", "/placeholder.jpg", "/placeholder.jpg"],
-      specifications: {
-        Material: "100% Cotton",
-        Fit: "Regular",
-        Color: "Navy Blue",
-        Care: "Machine Wash",
-      },
-      variants: [
-        { size: "S", color: "Navy Blue", stock: 15 },
-        { size: "M", color: "Navy Blue", stock: 25 },
-        { size: "L", color: "Navy Blue", stock: 20 },
-        { size: "XL", color: "Navy Blue", stock: 15 },
-      ],
-      features: ["Soft Cotton Fabric", "Comfortable Fit", "Durable Quality", "Easy Care"],
-      tags: ["t-shirt", "cotton", "casual", "men"],
+      images: ["/placeholder.jpg"],
       isActive: true,
-      isFeatured: true,
       rating: 4.3,
-      reviewCount: 156,
-      seoTitle: "Comfortable Cotton T-Shirt for Men - Navy Blue",
-      seoDescription: "100% cotton t-shirt in navy blue, perfect for casual everyday wear.",
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      reviewCount: 89,
     },
     {
-      name: "Stainless Steel Water Bottle",
-      slug: "stainless-steel-water-bottle",
-      description: "Insulated stainless steel water bottle that keeps drinks cold for 24 hours.",
+      name: "Bluetooth Speaker Portable",
+      description: "Compact portable Bluetooth speaker with powerful bass and 12-hour battery.",
+      price: 1999,
+      originalPrice: 2499,
+      category: "Electronics",
+      subcategory: "Audio",
+      brand: "SoundWave",
+      stock: 60,
+      images: ["/placeholder.jpg"],
+      isActive: true,
+      rating: 4.4,
+      reviewCount: 145,
+    },
+    {
+      name: "USB Cable Type C Fast Charging",
+      description: "High-quality Type-C cable with fast charging and data transfer capabilities.",
+      price: 199,
+      originalPrice: 299,
+      category: "Electronics",
+      subcategory: "Accessories",
+      brand: "CablePro",
+      stock: 300,
+      images: ["/placeholder.jpg"],
+      isActive: true,
+      rating: 4.1,
+      reviewCount: 78,
+    },
+    // Home & Kitchen
+    {
+      name: "Stainless Steel Water Bottle Insulated",
+      description: "Premium insulated water bottle that keeps drinks cold for 24 hours and hot for 12 hours.",
       price: 899,
       originalPrice: 1199,
       category: "Home & Kitchen",
       subcategory: "Drinkware",
       brand: "HydroMax",
-      sku: "HM-WB-004",
-      stock: 60,
-      reorderLevel: 12,
-      maxStock: 250,
-      images: ["/placeholder.jpg", "/placeholder.jpg"],
-      specifications: {
-        Capacity: "750ml",
-        Material: "Stainless Steel",
-        Insulation: "Double Wall",
-        Color: "Silver",
-      },
-      features: ["24-hour Cold Retention", "BPA Free", "Leak Proof Design", "Easy to Clean"],
-      tags: ["water bottle", "stainless steel", "insulated", "hydration"],
+      stock: 120,
+      images: ["/placeholder.jpg"],
       isActive: true,
-      isFeatured: false,
-      rating: 4.6,
+      isFeatured: true,
+      rating: 4.7,
       reviewCount: 203,
-      seoTitle: "Insulated Stainless Steel Water Bottle - 750ml",
-      seoDescription: "Keep your drinks cold for 24 hours with our premium insulated water bottle.",
-      createdAt: new Date(),
-      updatedAt: new Date(),
     },
     {
-      name: "Yoga Mat - Premium",
-      slug: "yoga-mat-premium",
-      description: "Non-slip yoga mat made from eco-friendly materials, perfect for all yoga practices.",
+      name: "Coffee Mug Ceramic White",
+      description: "Classic white ceramic coffee mug perfect for daily use and custom printing.",
+      price: 299,
+      originalPrice: 399,
+      category: "Home & Kitchen",
+      subcategory: "Drinkware",
+      brand: "CeramicCraft",
+      stock: 150,
+      images: ["/placeholder.jpg"],
+      customizable: true,
+      isActive: true,
+      rating: 4.3,
+      reviewCount: 92,
+    },
+    {
+      name: "Travel Mug Stainless Steel",
+      description: "Leak-proof travel mug with double-wall insulation for hot and cold beverages.",
+      price: 699,
+      originalPrice: 899,
+      category: "Home & Kitchen",
+      subcategory: "Drinkware",
+      brand: "TravelPro",
+      stock: 100,
+      images: ["/placeholder.jpg"],
+      isActive: true,
+      rating: 4.5,
+      reviewCount: 134,
+    },
+    {
+      name: "Kitchen Cutting Board Bamboo",
+      description: "Eco-friendly bamboo cutting board with antimicrobial properties.",
+      price: 799,
+      originalPrice: 999,
+      category: "Home & Kitchen",
+      subcategory: "Kitchen Tools",
+      brand: "EcoKitchen",
+      stock: 80,
+      images: ["/placeholder.jpg"],
+      isActive: true,
+      rating: 4.4,
+      reviewCount: 67,
+    },
+    // Sports & Fitness
+    {
+      name: "Yoga Mat Premium Non Slip",
+      description: "Premium non-slip yoga mat made from eco-friendly TPE material.",
       price: 1299,
       originalPrice: 1699,
       category: "Sports & Fitness",
       subcategory: "Yoga",
       brand: "ZenFit",
-      sku: "ZF-YM-005",
-      stock: 40,
-      reorderLevel: 8,
-      maxStock: 150,
-      images: ["/placeholder.jpg", "/placeholder.jpg", "/placeholder.jpg"],
-      specifications: {
-        Dimensions: "183cm x 61cm",
-        Thickness: "6mm",
-        Material: "TPE",
-        Color: "Purple",
-      },
-      features: ["Non-Slip Surface", "Eco-Friendly Material", "Lightweight & Portable", "Easy to Clean"],
-      tags: ["yoga mat", "fitness", "exercise", "eco-friendly"],
+      stock: 70,
+      images: ["/placeholder.jpg"],
       isActive: true,
-      isFeatured: true,
+      rating: 4.6,
+      reviewCount: 156,
+    },
+    {
+      name: "Resistance Bands Set Heavy Duty",
+      description: "Complete set of heavy-duty resistance bands for full-body workouts.",
+      price: 999,
+      originalPrice: 1299,
+      category: "Sports & Fitness",
+      subcategory: "Exercise Equipment",
+      brand: "FitPro",
+      stock: 90,
+      images: ["/placeholder.jpg"],
+      isActive: true,
+      rating: 4.3,
+      reviewCount: 89,
+    },
+    {
+      name: "Gym Water Bottle Large",
+      description: "Large capacity gym water bottle with measurement markers and leak-proof design.",
+      price: 599,
+      originalPrice: 799,
+      category: "Sports & Fitness",
+      subcategory: "Accessories",
+      brand: "GymGear",
+      stock: 110,
+      images: ["/placeholder.jpg"],
+      isActive: true,
+      rating: 4.2,
+      reviewCount: 73,
+    },
+    // Accessories
+    {
+      name: "Custom Tote Bag Canvas",
+      description: "Durable canvas tote bag perfect for custom printing and everyday use.",
+      price: 499,
+      originalPrice: 699,
+      category: "Accessories",
+      subcategory: "Bags",
+      brand: "BeKaarCool",
+      stock: 120,
+      images: ["/placeholder.jpg"],
+      customizable: true,
+      isActive: true,
       rating: 4.4,
-      reviewCount: 92,
-      seoTitle: "Premium Non-Slip Yoga Mat - Eco-Friendly",
-      seoDescription: "Practice yoga comfortably with our premium non-slip, eco-friendly yoga mat.",
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      reviewCount: 85,
+    },
+    {
+      name: "Custom Baseball Cap Black",
+      description: "Classic black baseball cap with adjustable strap, perfect for custom embroidery.",
+      price: 699,
+      originalPrice: 899,
+      category: "Accessories",
+      subcategory: "Caps",
+      brand: "BeKaarCool",
+      stock: 100,
+      images: ["/placeholder.jpg"],
+      customizable: true,
+      isActive: true,
+      rating: 4.3,
+      reviewCount: 94,
+    },
+    {
+      name: "Custom Backpack School",
+      description: "Spacious school backpack with multiple compartments, ideal for custom branding.",
+      price: 1499,
+      originalPrice: 1899,
+      category: "Accessories",
+      subcategory: "Bags",
+      brand: "BeKaarCool",
+      stock: 60,
+      images: ["/placeholder.jpg"],
+      customizable: true,
+      isActive: true,
+      rating: 4.5,
+      reviewCount: 112,
+    },
+    {
+      name: "Custom Mouse Pad Gaming",
+      description: "Large gaming mouse pad with smooth surface, perfect for custom designs.",
+      price: 399,
+      originalPrice: 599,
+      category: "Accessories",
+      subcategory: "Tech Accessories",
+      brand: "BeKaarCool",
+      stock: 150,
+      images: ["/placeholder.jpg"],
+      customizable: true,
+      isActive: true,
+      rating: 4.2,
+      reviewCount: 67,
+    },
+    {
+      name: "Custom Phone Stand Wooden",
+      description: "Elegant wooden phone stand perfect for desk use and custom engraving.",
+      price: 599,
+      originalPrice: 799,
+      category: "Accessories",
+      subcategory: "Tech Accessories",
+      brand: "WoodCraft",
+      stock: 80,
+      images: ["/placeholder.jpg"],
+      customizable: true,
+      isActive: true,
+      rating: 4.4,
+      reviewCount: 56,
     },
   ],
   coupons: [
@@ -275,14 +535,10 @@ const seedData = {
       maxDiscountAmount: 500,
       minOrderAmount: 999,
       usageLimit: 1000,
-      usedCount: 156,
+      usedCount: 45,
       validFrom: new Date("2024-01-01"),
       validTo: new Date("2024-12-31"),
       isActive: true,
-      applicableCategories: [],
-      applicableProducts: [],
-      createdAt: new Date(),
-      updatedAt: new Date(),
     },
     {
       code: "SAVE100",
@@ -291,121 +547,51 @@ const seedData = {
       discountValue: 100,
       minOrderAmount: 1999,
       usageLimit: 500,
-      usedCount: 89,
+      usedCount: 23,
       validFrom: new Date("2024-01-01"),
       validTo: new Date("2024-06-30"),
       isActive: true,
-      applicableCategories: [],
-      applicableProducts: [],
-      createdAt: new Date(),
-      updatedAt: new Date(),
     },
     {
-      code: "ELECTRONICS15",
-      description: "15% off on all electronics",
+      code: "FASHION15",
+      description: "15% off on all fashion items",
       discountType: "percentage",
       discountValue: 15,
-      maxDiscountAmount: 1000,
-      minOrderAmount: 1499,
+      maxDiscountAmount: 300,
+      minOrderAmount: 799,
       usageLimit: 200,
-      usedCount: 45,
+      usedCount: 12,
       validFrom: new Date("2024-01-01"),
       validTo: new Date("2024-03-31"),
       isActive: true,
+      applicableCategories: ["Fashion"],
+    },
+    {
+      code: "ELECTRONICS10",
+      description: "10% off on all electronics",
+      discountType: "percentage",
+      discountValue: 10,
+      maxDiscountAmount: 1000,
+      minOrderAmount: 1499,
+      usageLimit: 300,
+      usedCount: 34,
+      validFrom: new Date("2024-01-01"),
+      validTo: new Date("2024-04-30"),
+      isActive: true,
       applicableCategories: ["Electronics"],
-      applicableProducts: [],
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    },
-  ],
-  orders: [
-    {
-      orderNumber: "DR2024001",
-      userId: null, // Will be set after user creation
-      items: [
-        {
-          productId: null, // Will be set after product creation
-          name: "Wireless Bluetooth Headphones",
-          price: 2999,
-          quantity: 1,
-          image: "/placeholder.jpg",
-        },
-      ],
-      totalAmount: 3098,
-      status: "delivered",
-      paymentStatus: "paid",
-      paymentMethod: "razorpay",
-      shippingAddress: {
-        name: "John Doe",
-        phone: "+91 98765 43210",
-        address: "123 Main Street, Apartment 4B",
-        city: "Mumbai",
-        state: "Maharashtra",
-        pincode: "400001",
-      },
-      trackingNumber: "DR2024001TRK",
-      createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 7 days ago
-      updatedAt: new Date(),
     },
     {
-      orderNumber: "DR2024002",
-      userId: null, // Will be set after user creation
-      items: [
-        {
-          productId: null, // Will be set after product creation
-          name: "Smartphone Case - Clear",
-          price: 299,
-          quantity: 2,
-          image: "/placeholder.jpg",
-        },
-        {
-          productId: null, // Will be set after product creation
-          name: "Cotton T-Shirt - Navy Blue",
-          price: 599,
-          quantity: 1,
-          image: "/placeholder.jpg",
-        },
-      ],
-      totalAmount: 1296,
-      status: "shipped",
-      paymentStatus: "paid",
-      paymentMethod: "razorpay",
-      shippingAddress: {
-        name: "John Doe",
-        phone: "+91 98765 43210",
-        address: "123 Main Street, Apartment 4B",
-        city: "Mumbai",
-        state: "Maharashtra",
-        pincode: "400001",
-      },
-      trackingNumber: "DR2024002TRK",
-      createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), // 3 days ago
-      updatedAt: new Date(),
-    },
-  ],
-  reviews: [
-    {
-      productId: null, // Will be set after product creation
-      userId: null, // Will be set after user creation
-      rating: 5,
-      title: "Excellent sound quality!",
-      comment:
-        "These headphones are amazing. The sound quality is crystal clear and the battery life is exactly as advertised. Highly recommended!",
-      isVerified: true,
-      isHelpful: 12,
-      createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
-      updatedAt: new Date(),
-    },
-    {
-      productId: null, // Will be set after product creation
-      userId: null, // Will be set after user creation
-      rating: 4,
-      title: "Good protection",
-      comment: "The case fits perfectly and provides good protection. It's truly clear and doesn't yellow over time.",
-      isVerified: true,
-      isHelpful: 8,
-      createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
-      updatedAt: new Date(),
+      code: "CUSTOM25",
+      description: "25% off on all customizable products",
+      discountType: "percentage",
+      discountValue: 25,
+      maxDiscountAmount: 750,
+      minOrderAmount: 1299,
+      usageLimit: 150,
+      usedCount: 18,
+      validFrom: new Date("2024-01-01"),
+      validTo: new Date("2024-05-31"),
+      isActive: true,
     },
   ],
 };
@@ -414,7 +600,6 @@ async function seedDatabase() {
   try {
     await connectDB();
 
-    // Clear existing data
     console.log("Clearing existing data...");
     await User.deleteMany({});
     await Product.deleteMany({});
@@ -422,89 +607,145 @@ async function seedDatabase() {
     await Order.deleteMany({});
     await Review.deleteMany({});
 
-    // Insert users
-    console.log("Inserting users...");
-    const userResult = await User.insertMany(seedData.users);
-    const userMap = new Map(userResult.map(user => [user.email, user._id]));
+    console.log("Creating users...");
+    const users = await User.insertMany(seedData.users);
+    const adminUser = users.find(u => u.role === "admin");
+    const customerUser = users.find(u => u.role === "customer");
+    const sellerUser = users.find(u => u.role === "seller");
 
-    // Insert products with seller assigned
-    console.log("Inserting products...");
-    const sellerId = userMap.get("jane@example.com"); // Jane Smith is the seller
-    const productsWithSeller = seedData.products.map(product => ({
+    console.log("Creating products...");
+    const productsWithDetails = seedData.products.map((product, index) => ({
       ...product,
-      seller: sellerId,
+      slug: generateSlug(product.name),
+      sku: `BKC-${String(index + 1).padStart(3, '0')}`,
+      seller: sellerUser._id,
+      seoTitle: `${product.name} - Buy Online at BeKaarCool | Best ${product.category}`,
+      seoDescription: product.description.length > 160 ? product.description.substring(0, 157) + '...' : product.description,
+      seoKeywords: [
+        ...product.name.toLowerCase().split(' '),
+        product.category.toLowerCase(),
+        product.brand.toLowerCase(),
+        'buy online',
+        'india',
+        ...(product.customizable ? ['custom', 'personalized'] : [])
+      ],
+      tags: product.name.toLowerCase().split(' ').concat(product.category.toLowerCase().split(' ')),
+      variations: product.customizable ? {
+        sizes: ['S', 'M', 'L', 'XL', 'XXL'],
+        colors: product.name.includes('Black') ? ['Black'] : 
+                product.name.includes('White') ? ['White'] :
+                product.name.includes('Navy') ? ['Navy'] :
+                product.name.includes('Red') ? ['Red'] :
+                product.name.includes('Gray') ? ['Gray'] :
+                ['Black', 'White', 'Navy', 'Red', 'Gray']
+      } : undefined,
     }));
-    const productResult = await Product.insertMany(productsWithSeller);
-    const productMap = new Map(productResult.map(product => [product.name, product._id]));
+    const products = await Product.insertMany(productsWithDetails);
 
-    // Update orders with user and product references
-    console.log("Updating orders...");
-    const johnUserId = userMap.get("john@example.com");
-    const updatedOrders = seedData.orders.map(order => {
-      const subtotal = order.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-      const shipping = 99; // Fixed shipping cost
-      const total = subtotal + shipping;
-      
-      return {
-        orderNumber: order.orderNumber,
-        user: johnUserId, // Changed from userId to user
-        subtotal: subtotal, // Added required subtotal
-        total: total, // Changed from totalAmount to total
-        shipping: shipping, // Added shipping cost
-        paymentStatus: order.paymentStatus === "paid" ? "completed" : order.paymentStatus, // Fix enum value
-        paymentMethod: order.paymentMethod,
-        status: order.status,
-        trackingNumber: order.trackingNumber,
-        shippingAddress: order.shippingAddress,
-        createdAt: order.createdAt,
-        updatedAt: order.updatedAt,
-        items: order.items.map(item => ({
-          product: productMap.get(item.name), // Changed from productId to product
-          quantity: item.quantity,
-          price: item.price,
-          seller: sellerId, // Added required seller field
-        })),
-      };
-    });
-    const orderResult = await Order.insertMany(updatedOrders);
+    console.log("Creating coupons...");
+    await Coupon.insertMany(seedData.coupons);
 
-    // Update reviews with user, product, and order references
-    console.log("Updating reviews...");
-    const updatedReviews = seedData.reviews.map((review, index) => ({
-      user: johnUserId, // Changed from userId to user
-      product: productMap.get(review.title.includes("headphones") ? "Wireless Bluetooth Headphones" : "Smartphone Case - Clear"), // Changed from productId to product
-      order: orderResult[0]._id, // Add required order reference using actual order ID
-      rating: review.rating,
-      comment: review.comment,
-      verified: review.isVerified, // Changed from isVerified to verified
-      helpful: review.isHelpful, // Changed from isHelpful to helpful
-      createdAt: review.createdAt,
-      updatedAt: review.updatedAt,
+    console.log("Creating sample orders...");
+    const sampleOrders = [
+      {
+        orderNumber: `ORD-${Date.now()}-001`,
+        user: customerUser._id,
+        customer: customerUser._id,
+        items: [
+          {
+            product: products[0]._id,
+            quantity: 2,
+            price: 599,
+            size: "M",
+            color: "Black",
+          },
+        ],
+        total: 1298,
+        subtotal: 1198,
+        shipping: 100,
+        tax: 0,
+        discount: 0,
+        status: "delivered",
+        paymentStatus: "paid",
+        paymentMethod: "razorpay",
+        paymentId: "pay_sample123",
+        shippingAddress: {
+          name: "John Doe",
+          phone: "+91 98765 43210",
+          address: "123 Main Street, Apartment 4B",
+          city: "Mumbai",
+          state: "Maharashtra",
+          pincode: "400001",
+          country: "India",
+        },
+        trackingNumber: "TRK001",
+        estimatedDelivery: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
+      },
+      {
+        orderNumber: `ORD-${Date.now()}-002`,
+        user: customerUser._id,
+        customer: customerUser._id,
+        items: [
+          {
+            product: products[5]._id,
+            quantity: 1,
+            price: 1299,
+            size: "L",
+            color: "Black",
+          },
+        ],
+        total: 1399,
+        subtotal: 1299,
+        shipping: 100,
+        tax: 0,
+        discount: 0,
+        status: "confirmed",
+        paymentStatus: "paid",
+        paymentMethod: "cod",
+        shippingAddress: {
+          name: "John Doe",
+          phone: "+91 98765 43210",
+          address: "123 Main Street, Apartment 4B",
+          city: "Mumbai",
+          state: "Maharashtra",
+          pincode: "400001",
+          country: "India",
+        },
+        estimatedDelivery: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
+        createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+      },
+    ];
+
+    await Order.insertMany(sampleOrders);
+
+    console.log("Creating sample reviews...");
+    const sampleReviews = products.slice(0, 10).map((product, index) => ({
+      product: product._id,
+      user: customerUser._id,
+      rating: 4 + Math.random(),
+      title: `Great ${product.name.split(' ')[0]}!`,
+      comment: `Excellent quality and fast delivery. Very satisfied with this ${product.name.toLowerCase()}.`,
+      isVerified: true,
+      createdAt: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000),
     }));
-    await Review.insertMany(updatedReviews);
 
-    // Insert coupons with createdBy field
-    console.log("Inserting coupons...");
-    const adminUserId = userMap.get("admin@bekaarcool.com"); // Admin creates the coupons
-    const couponsWithCreator = seedData.coupons.map(coupon => ({
-      ...coupon,
-      createdBy: adminUserId,
-    }));
-    await Coupon.insertMany(couponsWithCreator);
+    await Review.insertMany(sampleReviews);
 
-    console.log("Database seeded successfully!");
-    console.log(`Inserted ${userResult.length} users`);
-    console.log(`Inserted ${productResult.length} products`);
-    console.log(`Inserted ${seedData.coupons.length} coupons`);
-    console.log(`Inserted ${orderResult.length} orders`);
-    console.log(`Inserted ${updatedReviews.length} reviews`);
+    console.log("✅ Database seeded successfully!");
+    console.log(`Created ${users.length} users`);
+    console.log(`Created ${products.length} products`);
+    console.log(`Created ${seedData.coupons.length} coupons`);
+    console.log(`Created ${sampleOrders.length} orders`);
+    console.log(`Created ${sampleReviews.length} reviews`);
 
   } catch (error) {
-    console.error("Error seeding database:", error);
-  } finally {
-    process.exit(0);
+    console.error("❌ Error seeding database:", error);
   }
 }
 
-// Run the seed function
-seedDatabase();
+export default seedDatabase;
+
+if (require.main === module) {
+  seedDatabase().then(() => process.exit(0));
+}

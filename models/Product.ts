@@ -82,7 +82,23 @@ const productSchema = new mongoose.Schema({
   slug: {
     type: String,
     unique: true,
+    required: true,
   },
+  seoTitle: {
+    type: String,
+    maxlength: 60,
+  },
+  seoDescription: {
+    type: String,
+    maxlength: 160,
+  },
+  seoKeywords: [String],
+  brand: String,
+  sku: {
+    type: String,
+    unique: true,
+  },
+  subcategory: String,
   views: {
     type: Number,
     default: 0,
@@ -104,5 +120,21 @@ productSchema.index({ rating: -1 })
 productSchema.index({ featured: -1 })
 productSchema.index({ createdAt: -1 })
 productSchema.index({ seller: 1 })
+productSchema.index({ slug: 1 })
+productSchema.index({ brand: 1 })
+productSchema.index({ sku: 1 })
+
+// Generate slug from name before saving
+productSchema.pre('save', function(next) {
+  if (this.isModified('name') || this.isNew) {
+    this.slug = this.name
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .trim()
+  }
+  next()
+})
 
 export const Product = mongoose.models.Product || mongoose.model("Product", productSchema)

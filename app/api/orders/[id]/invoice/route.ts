@@ -79,7 +79,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       shipping: order.shipping,
       tax: order.tax,
       discount: order.discount,
-      total: order.totalAmount,
+      total: order.total,
 
       // Payment details
       paymentMethod: order.paymentMethod,

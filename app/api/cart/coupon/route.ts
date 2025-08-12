@@ -18,10 +18,19 @@ export async function POST(request: NextRequest) {
     // Resolve user ID to ensure it's a valid MongoDB ObjectId
     const userId = await resolveUserId(session.user.id, session.user.email)
 
-    const { couponCode } = await request.json()
+    const body = await request.json()
+    console.log('Coupon request body:', body) // Debug log
+    
+    const couponCode = body.couponCode || body.code
+    console.log('Extracted coupon code:', couponCode) // Debug log
+
+    if (!couponCode || typeof couponCode !== 'string' || !couponCode.trim()) {
+      console.log('Invalid coupon code validation failed')
+      return NextResponse.json({ error: "Please enter a valid coupon code" }, { status: 400 })
+    }
 
     const coupon = await Coupon.findOne({
-      code: couponCode.toUpperCase(),
+      code: couponCode.trim().toUpperCase(),
       isActive: true,
       validFrom: { $lte: new Date() },
       validTo: { $gte: new Date() },
@@ -58,7 +67,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Update cart with coupon
-    cart.couponCode = couponCode.toUpperCase()
+    cart.couponCode = couponCode.trim().toUpperCase()
     cart.discount = discount
     await cart.save()
 
@@ -67,11 +76,43 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       discount,
-      couponCode: couponCode.toUpperCase(),
+      couponCode: couponCode.trim().toUpperCase(),
       message: "Coupon applied successfully",
     })
   } catch (error) {
     console.error("Error applying coupon:", error)
     return NextResponse.json({ error: "Failed to apply coupon" }, { status: 500 })
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    await connectDB()
+
+    const userId = await resolveUserId(session.user.id, session.user.email)
+
+    const cart = await Cart.findOne({ user: userId })
+    if (!cart) {
+      return NextResponse.json({ error: "Cart not found" }, { status: 404 })
+    }
+
+    // Remove coupon from cart
+    cart.couponCode = undefined
+    cart.discount = 0
+    await cart.save()
+
+    return NextResponse.json({
+      message: "Coupon removed successfully",
+      discount: 0,
+      couponCode: null
+    })
+  } catch (error) {
+    console.error("Error removing coupon:", error)
+    return NextResponse.json({ error: "Failed to remove coupon" }, { status: 500 })
   }
 }

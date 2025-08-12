@@ -30,7 +30,8 @@ interface Order {
     size: string
     color: string
   }>
-  totalAmount: number
+  total?: number
+  totalAmount?: number
   status: string
   paymentStatus: string
   trackingNumber?: string
@@ -163,15 +164,20 @@ export default function OrdersPage() {
       const response = await fetch(`/api/orders/${orderId}/invoice`)
       if (response.ok) {
         const invoice = await response.json()
-        // Create a simple invoice download - in production, generate PDF
-        const invoiceData = JSON.stringify(invoice, null, 2)
-        const blob = new Blob([invoiceData], { type: "application/json" })
+        
+        // Generate styled HTML invoice
+        const { generateStyledInvoiceHTML } = await import('@/lib/pdf-invoice')
+        const htmlContent = generateStyledInvoiceHTML(invoice)
+        
+        // Create and download HTML file
+        const blob = new Blob([htmlContent], { type: 'text/html' })
         const url = URL.createObjectURL(blob)
-        const a = document.createElement("a")
+        const a = document.createElement('a')
         a.href = url
-        a.download = `invoice-${invoice.orderNumber}.json`
+        a.download = `invoice-${invoice.orderNumber}.html`
         a.click()
         URL.revokeObjectURL(url)
+        
         toast.success("Invoice downloaded")
       } else {
         toast.error("Failed to download invoice")
@@ -346,7 +352,7 @@ export default function OrdersPage() {
                             </div>
                           </div>
                           <div className="text-right">
-                            <p className="font-medium">₹{item.price}</p>
+                            <p className="font-medium">₹{Math.round(item.price)}</p>
                           </div>
                         </div>
                       ))}
@@ -357,7 +363,7 @@ export default function OrdersPage() {
                       <div className="flex items-center justify-between">
                         <div className="space-y-1">
                           <p className="text-sm text-gray-600">
-                            Total: <span className="font-medium text-gray-900">₹{order.totalAmount}</span>
+                            Total: <span className="font-medium text-gray-900">₹{Math.round(order.total || order.totalAmount || 0)}</span>
                           </p>
                           {order.trackingNumber && (
                             <p className="text-sm text-gray-600">

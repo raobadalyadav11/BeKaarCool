@@ -46,7 +46,7 @@ const orderSchema = new mongoose.Schema({
       },
     },
   ],
-  totalAmount: {
+  total: {
     type: Number,
     required: true,
   },
@@ -145,7 +145,7 @@ const orderSchema = new mongoose.Schema({
   },
 })
 
-orderSchema.index({ orderNumber: 1 })
+// orderSchema.index({ orderNumber: 1 }) // Removed duplicate - already defined in schema
 orderSchema.index({ customer: 1 })
 orderSchema.index({ user: 1 })
 orderSchema.index({ status: 1 })

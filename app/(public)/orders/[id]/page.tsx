@@ -46,7 +46,8 @@ interface OrderDetails {
   paymentMethod: string
   paymentStatus: string
   paymentId?: string
-  totalAmount: number
+  total?: number
+  totalAmount?: number
   subtotal: number
   shipping: number
   tax: number
@@ -209,17 +210,33 @@ export default function OrderDetailsPage({ params }: OrderPageProps) {
       const response = await fetch(`/api/orders/${orderId}/invoice`)
       if (response.ok) {
         const invoice = await response.json()
-        const invoiceData = JSON.stringify(invoice, null, 2)
-        const blob = new Blob([invoiceData], { type: "application/json" })
+        
+        // Generate styled HTML invoice
+        const { generateStyledInvoiceHTML } = await import('@/lib/pdf-invoice')
+        const htmlContent = generateStyledInvoiceHTML(invoice)
+        
+        // Create and download HTML file
+        const blob = new Blob([htmlContent], { type: 'text/html' })
         const url = URL.createObjectURL(blob)
-        const a = document.createElement("a")
+        const a = document.createElement('a')
         a.href = url
-        a.download = `invoice-${invoice.orderNumber}.json`
+        a.download = `invoice-${invoice.orderNumber}.html`
         a.click()
         URL.revokeObjectURL(url)
-        toast.success("Invoice downloaded")
+        
+        // Open in new window for printing
+        const printWindow = window.open('', '_blank')
+        if (printWindow) {
+          printWindow.document.write(htmlContent)
+          printWindow.document.close()
+          setTimeout(() => {
+            printWindow.print()
+          }, 500)
+        }
+        
+        toast.success("Invoice ready for download and printing")
       } else {
-        toast.error("Failed to download invoice")
+        toast.error("Failed to generate invoice")
       }
     } catch (error) {
       toast.error("Failed to download invoice")
@@ -504,7 +521,7 @@ export default function OrderDetailsPage({ params }: OrderPageProps) {
                       )}
                     </div>
                     <div className="text-right flex-shrink-0">
-                      <p className="font-semibold text-lg text-gray-900">₹{item.price}</p>
+                      <p className="font-semibold text-lg text-gray-900">₹{Math.round(item.price)}</p>
                       <p className="text-sm text-gray-500">₹{Math.round(item.price / item.quantity)} each</p>
                     </div>
                   </div>
@@ -525,15 +542,15 @@ export default function OrderDetailsPage({ params }: OrderPageProps) {
               <div className="space-y-2">
                 <div className="flex justify-between py-1">
                   <span className="text-gray-600">Subtotal</span>
-                  <span className="font-medium">₹{order.subtotal}</span>
+                  <span className="font-medium">₹{Math.round(order.subtotal)}</span>
                 </div>
                 <div className="flex justify-between py-1">
                   <span className="text-gray-600">Shipping</span>
-                  <span className="font-medium">{order.shipping > 0 ? `₹${order.shipping}` : 'Free'}</span>
+                  <span className="font-medium">{order.shipping > 0 ? `₹${Math.round(order.shipping)}` : 'Free'}</span>
                 </div>
                 <div className="flex justify-between py-1">
                   <span className="text-gray-600">Tax</span>
-                  <span className="font-medium">₹{order.tax}</span>
+                  <span className="font-medium">₹{Math.round(order.tax)}</span>
                 </div>
                 {order.discount > 0 && (
                   <div className="flex justify-between py-1 text-green-600">
@@ -542,14 +559,14 @@ export default function OrderDetailsPage({ params }: OrderPageProps) {
                         {order.couponCode}
                       </span>
                     )}</span>
-                    <span className="font-medium">-₹{order.discount}</span>
+                    <span className="font-medium">-₹{Math.round(order.discount)}</span>
                   </div>
                 )}
               </div>
               <Separator className="my-3" />
               <div className="flex justify-between font-bold text-xl py-2">
                 <span>Total</span>
-                <span className="text-blue-600">₹{order.totalAmount}</span>
+                <span className="text-blue-600">₹{Math.round(order.total || order.totalAmount)}</span>
               </div>
             </CardContent>
           </Card>
