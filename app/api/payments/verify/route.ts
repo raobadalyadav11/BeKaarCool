@@ -48,11 +48,17 @@ export async function POST(request: NextRequest) {
       user: userId,
       customer: userId,
       items: orderData.items.map((item: any) => ({
-        product: item.productId,
+        product: item.productId || null,
+        customProduct: item.customProduct ? {
+          name: item.customProduct.name,
+          type: item.customProduct.type,
+          basePrice: item.customProduct.basePrice,
+        } : null,
         quantity: item.quantity,
         price: item.price,
         size: item.size || 'M',
         color: item.color || 'Default',
+        customization: item.customization,
       })),
       total: orderData.total || orderData.totalAmount,
       subtotal: Math.round((orderData.total || orderData.totalAmount) * 0.85),
@@ -80,12 +86,16 @@ export async function POST(request: NextRequest) {
 
     // Process these operations in parallel to reduce time
     const [, ,] = await Promise.all([
-      // Update product stock
-      Promise.all(orderData.items.map((item: any) => 
-        Product.findByIdAndUpdate(item.productId, {
-          $inc: { stock: -item.quantity, sold: item.quantity },
-        })
-      )),
+      // Update product stock (only for items with productId)
+      Promise.all(
+        orderData.items
+          .filter((item: any) => item.productId)
+          .map((item: any) => 
+            Product.findByIdAndUpdate(item.productId, {
+              $inc: { stock: -item.quantity, sold: item.quantity },
+            })
+          )
+      ),
       // Clear cart
       Cart.findOneAndUpdate(
         { user: userId },

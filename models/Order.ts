@@ -21,7 +21,11 @@ const orderSchema = new mongoose.Schema({
       product: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Product",
-        required: true,
+      },
+      customProduct: {
+        name: String,
+        type: String,
+        basePrice: Number,
       },
       quantity: {
         type: Number,
@@ -43,6 +47,7 @@ const orderSchema = new mongoose.Schema({
         },
         font: String,
         textColor: String,
+        elements: [mongoose.Schema.Types.Mixed],
       },
     },
   ],
@@ -145,7 +150,16 @@ const orderSchema = new mongoose.Schema({
   },
 })
 
-// orderSchema.index({ orderNumber: 1 }) // Removed duplicate - already defined in schema
+// Validation: each item must have either product or customProduct
+orderSchema.pre('save', function(next) {
+  for (const item of this.items) {
+    if (!item.product && !item.customProduct?.name) {
+      return next(new Error('Each item must have either a product or customProduct'))
+    }
+  }
+  next()
+})
+
 orderSchema.index({ customer: 1 })
 orderSchema.index({ user: 1 })
 orderSchema.index({ status: 1 })

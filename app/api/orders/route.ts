@@ -89,11 +89,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: "Missing required fields" }, { status: 400 })
     }
 
-    // Validate stock availability
+    // Validate stock availability (only for items with product)
     for (const item of items) {
-      const product = await Product.findById(item.product)
-      if (!product || product.stock < item.quantity) {
-        return NextResponse.json({ message: `Insufficient stock for ${product?.name || "product"}` }, { status: 400 })
+      if (item.product || item.productId) {
+        const productId = item.product || item.productId
+        const product = await Product.findById(productId)
+        if (!product || product.stock < item.quantity) {
+          return NextResponse.json({ message: `Insufficient stock for ${product?.name || "product"}` }, { status: 400 })
+        }
       }
     }
 
@@ -116,8 +119,17 @@ export async function POST(request: NextRequest) {
       user: userId,
       customer: userId,
       items: items.map((item: any) => ({
-        ...item,
-        seller: item.sellerId, // Assuming sellerId is provided
+        product: item.product || item.productId || null,
+        customProduct: item.customProduct ? {
+          name: item.customProduct.name,
+          type: item.customProduct.type,
+          basePrice: item.customProduct.basePrice,
+        } : null,
+        quantity: item.quantity,
+        price: item.price,
+        size: item.size,
+        color: item.color,
+        customization: item.customization,
       })),
       shippingAddress,
       billingAddress: billingAddress || shippingAddress,
@@ -140,11 +152,14 @@ export async function POST(request: NextRequest) {
 
     await order.save()
 
-    // Update product stock and sales
+    // Update product stock and sales (only for items with product)
     for (const item of items) {
-      await Product.findByIdAndUpdate(item.product, {
-        $inc: { stock: -item.quantity, sold: item.quantity },
-      })
+      if (item.product || item.productId) {
+        const productId = item.product || item.productId
+        await Product.findByIdAndUpdate(productId, {
+          $inc: { stock: -item.quantity, sold: item.quantity },
+        })
+      }
     }
 
     // Clear cart

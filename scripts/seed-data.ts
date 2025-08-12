@@ -537,7 +537,7 @@ const seedData = {
       usageLimit: 1000,
       usedCount: 45,
       validFrom: new Date("2024-01-01"),
-      validTo: new Date("2024-12-31"),
+      validTo: new Date("2025-12-31"),
       isActive: true,
     },
     {
@@ -549,7 +549,7 @@ const seedData = {
       usageLimit: 500,
       usedCount: 23,
       validFrom: new Date("2024-01-01"),
-      validTo: new Date("2024-06-30"),
+      validTo: new Date("2025-06-30"),
       isActive: true,
     },
     {
@@ -562,7 +562,7 @@ const seedData = {
       usageLimit: 200,
       usedCount: 12,
       validFrom: new Date("2024-01-01"),
-      validTo: new Date("2024-03-31"),
+      validTo: new Date("2025-03-31"),
       isActive: true,
       applicableCategories: ["Fashion"],
     },
@@ -576,7 +576,7 @@ const seedData = {
       usageLimit: 300,
       usedCount: 34,
       validFrom: new Date("2024-01-01"),
-      validTo: new Date("2024-04-30"),
+      validTo: new Date("2025-04-30"),
       isActive: true,
       applicableCategories: ["Electronics"],
     },
@@ -590,7 +590,7 @@ const seedData = {
       usageLimit: 150,
       usedCount: 18,
       validFrom: new Date("2024-01-01"),
-      validTo: new Date("2024-05-31"),
+      validTo: new Date("2025-05-31"),
       isActive: true,
     },
   ],
@@ -619,7 +619,7 @@ async function seedDatabase() {
       slug: generateSlug(product.name),
       sku: `BKC-${String(index + 1).padStart(3, '0')}`,
       seller: sellerUser._id,
-      seoTitle: `${product.name} - Buy Online at BeKaarCool | Best ${product.category}`,
+      seoTitle: `${product.name} | BeKaarCool`.substring(0, 60),
       seoDescription: product.description.length > 160 ? product.description.substring(0, 157) + '...' : product.description,
       seoKeywords: [
         ...product.name.toLowerCase().split(' '),
@@ -643,7 +643,11 @@ async function seedDatabase() {
     const products = await Product.insertMany(productsWithDetails);
 
     console.log("Creating coupons...");
-    await Coupon.insertMany(seedData.coupons);
+    const couponsWithCreator = seedData.coupons.map(coupon => ({
+      ...coupon,
+      createdBy: adminUser._id
+    }));
+    await Coupon.insertMany(couponsWithCreator);
 
     console.log("Creating sample orders...");
     const sampleOrders = [
@@ -717,12 +721,13 @@ async function seedDatabase() {
       },
     ];
 
-    await Order.insertMany(sampleOrders);
+    const orders = await Order.insertMany(sampleOrders);
 
     console.log("Creating sample reviews...");
     const sampleReviews = products.slice(0, 10).map((product, index) => ({
       product: product._id,
       user: customerUser._id,
+      order: orders[0]._id,
       rating: 4 + Math.random(),
       title: `Great ${product.name.split(' ')[0]}!`,
       comment: `Excellent quality and fast delivery. Very satisfied with this ${product.name.toLowerCase()}.`,
