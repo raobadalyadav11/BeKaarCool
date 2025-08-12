@@ -81,7 +81,6 @@ supportTicketSchema.pre("save", function (next) {
 supportTicketSchema.index({ user: 1 })
 supportTicketSchema.index({ status: 1 })
 supportTicketSchema.index({ priority: 1 })
-supportTicketSchema.index({ ticketNumber: 1 })
 supportTicketSchema.index({ createdAt: -1 })
 
 export const SupportTicket = mongoose.models.SupportTicket || mongoose.model("SupportTicket", supportTicketSchema)

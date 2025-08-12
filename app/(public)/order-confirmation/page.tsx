@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -49,7 +49,7 @@ interface OrderDetails {
   createdAt: string
 }
 
-export default function OrderConfirmationPage() {
+function OrderConfirmationContent() {
   const [order, setOrder] = useState<OrderDetails | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
@@ -388,5 +388,17 @@ export default function OrderConfirmationPage() {
         </Card>
       </div>
     </div>
+  )
+}
+
+export default function OrderConfirmationPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    }>
+      <OrderConfirmationContent />
+    </Suspense>
   )
 }

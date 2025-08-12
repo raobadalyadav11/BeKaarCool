@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
       total: orderData.total || orderData.totalAmount,
       subtotal: Math.round((orderData.total || orderData.totalAmount) * 0.85),
       shipping: (orderData.total || orderData.totalAmount) > 500 ? 0 : 50,
-      tax: Math.round((orderData.total || orderData.totalAmount) * 0.18)
+      tax: Math.round((orderData.total || orderData.totalAmount) * 0.18),
       discount: orderData.discount || 0,
       couponCode: orderData.couponCode,
       status: "confirmed",

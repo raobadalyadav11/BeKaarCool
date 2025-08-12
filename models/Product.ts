@@ -120,9 +120,7 @@ productSchema.index({ rating: -1 })
 productSchema.index({ featured: -1 })
 productSchema.index({ createdAt: -1 })
 productSchema.index({ seller: 1 })
-productSchema.index({ slug: 1 })
 productSchema.index({ brand: 1 })
-productSchema.index({ sku: 1 })
 
 // Generate slug from name before saving
 productSchema.pre('save', function(next) {

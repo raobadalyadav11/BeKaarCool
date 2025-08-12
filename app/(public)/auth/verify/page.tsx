@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -9,7 +9,7 @@ import { Loader2, CheckCircle, XCircle, Mail } from "lucide-react"
 import Link from "next/link"
 import { toast } from "sonner"
 
-export default function VerifyEmailPage() {
+function VerifyEmailContent() {
   const [loading, setLoading] = useState(true)
   const [verified, setVerified] = useState(false)
   const [error, setError] = useState("")
@@ -164,5 +164,22 @@ export default function VerifyEmailPage() {
         </CardContent>
       </Card>
     </div>
+  )
+}
+
+export default function VerifyEmailPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <Card className="w-full max-w-md">
+          <CardContent className="flex flex-col items-center justify-center p-8">
+            <Loader2 className="h-8 w-8 animate-spin mb-4" />
+            <p>Loading...</p>
+          </CardContent>
+        </Card>
+      </div>
+    }>
+      <VerifyEmailContent />
+    </Suspense>
   )
 }
