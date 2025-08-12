@@ -37,19 +37,33 @@ export async function GET(request: NextRequest) {
       filter.featured = true
     }
 
-    if (search) {
-      filter.$or = [
-        { name: { $regex: search, $options: "i" } },
-        { description: { $regex: search, $options: "i" } },
-        { tags: { $in: [new RegExp(search, "i")] } },
-        { "seo.keywords": { $in: [new RegExp(search, "i")] } },
-      ]
+    if (search && search.trim()) {
+      filter.$and = filter.$and || []
+      filter.$and.push({
+        $or: [
+          { name: { $regex: search.trim(), $options: "i" } },
+          { description: { $regex: search.trim(), $options: "i" } },
+          { category: { $regex: search.trim(), $options: "i" } },
+          { subcategory: { $regex: search.trim(), $options: "i" } },
+          { brand: { $regex: search.trim(), $options: "i" } },
+          { tags: { $in: [new RegExp(search.trim(), "i")] } },
+          { "seo.keywords": { $in: [new RegExp(search.trim(), "i")] } },
+          { sku: { $regex: search.trim(), $options: "i" } },
+        ]
+      })
     }
 
     if (minPrice || maxPrice) {
       filter.price = {}
       if (minPrice) filter.price.$gte = Number.parseFloat(minPrice)
       if (maxPrice) filter.price.$lte = Number.parseFloat(maxPrice)
+    }
+
+    // Size filter
+    const sizes = searchParams.get("sizes")
+    if (sizes) {
+      const sizeArray = sizes.split(",")
+      filter["variations.sizes"] = { $in: sizeArray }
     }
 
     // Build sort object
@@ -70,6 +84,9 @@ export async function GET(request: NextRequest) {
       case "popular":
         sortObj = { views: -1, sold: -1 }
         break
+      case "featured":
+        sortObj = { featured: -1, rating: -1 }
+        break
       case "name":
         sortObj = { name: 1 }
         break
@@ -82,6 +99,7 @@ export async function GET(request: NextRequest) {
       .skip(skip)
       .limit(limit)
       .populate("seller", "name email avatar")
+      .lean()
 
     const total = await Product.countDocuments(filter)
 

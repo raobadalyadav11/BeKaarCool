@@ -7,9 +7,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Slider } from "@/components/ui/slider"
-import { Filter, Search, Grid3X3, List, SlidersHorizontal, Loader2 } from "lucide-react"
+import { Filter, Search, Grid3X3, List, SlidersHorizontal, Loader2, X } from "lucide-react"
 import { ProductCard } from "@/components/product/product-card"
+import { SearchFilters } from "@/components/search/search-filters"
 import { useDebounce } from "@/hooks/use-debounce"
+import { useRouter } from "next/navigation"
 
 export default function ProductsPage() {
   const [products, setProducts] = useState([])
@@ -43,6 +45,7 @@ export default function ProductsPage() {
 
       if (debouncedSearch) params.append("search", debouncedSearch)
       if (selectedCategories.length > 0) params.append("category", selectedCategories.join(","))
+      if (selectedSizes.length > 0) params.append("sizes", selectedSizes.join(","))
       if (priceRange[0] > 0) params.append("minPrice", priceRange[0].toString())
       if (priceRange[1] < 5000) params.append("maxPrice", priceRange[1].toString())
 
@@ -59,74 +62,15 @@ export default function ProductsPage() {
   }
 
   useEffect(() => {
-    fetchProducts()
-  }, [pagination.page, sortBy, debouncedSearch, selectedCategories, priceRange])
+    // Reset to page 1 when search or filters change
+    if (pagination.page !== 1 && (debouncedSearch || selectedCategories.length > 0 || selectedSizes.length > 0 || priceRange[0] > 0 || priceRange[1] < 5000)) {
+      setPagination(prev => ({ ...prev, page: 1 }))
+    } else {
+      fetchProducts()
+    }
+  }, [pagination.page, sortBy, debouncedSearch, selectedCategories, selectedSizes, priceRange])
 
-  const FilterContent = () => (
-    <div className="space-y-6">
-      {/* Categories */}
-      <div>
-        <h3 className="font-semibold mb-3">Categories</h3>
-        <div className="space-y-2">
-          {categories.map((category) => (
-            <div key={category} className="flex items-center space-x-2">
-              <Checkbox
-                id={category}
-                checked={selectedCategories.includes(category)}
-                onCheckedChange={(checked) => {
-                  if (checked) {
-                    setSelectedCategories([...selectedCategories, category])
-                  } else {
-                    setSelectedCategories(selectedCategories.filter((c) => c !== category))
-                  }
-                }}
-              />
-              <label htmlFor={category} className="text-sm font-medium cursor-pointer">
-                {category}
-              </label>
-            </div>
-          ))}
-        </div>
-      </div>
 
-      {/* Price Range */}
-      <div>
-        <h3 className="font-semibold mb-3">Price Range</h3>
-        <div className="space-y-3">
-          <Slider value={priceRange} onValueChange={setPriceRange} max={5000} min={0} step={100} className="w-full" />
-          <div className="flex justify-between text-sm text-gray-600">
-            <span>₹{priceRange[0]}</span>
-            <span>₹{priceRange[1]}</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Sizes */}
-      <div>
-        <h3 className="font-semibold mb-3">Sizes</h3>
-        <div className="space-y-2">
-          {sizes.map((size) => (
-            <div key={size} className="flex items-center space-x-2">
-              <Checkbox
-                id={size}
-                checked={selectedSizes.includes(size)}
-                onCheckedChange={(checked) => {
-                  if (checked) {
-                    setSelectedSizes([...selectedSizes, size])
-                  } else {
-                    setSelectedSizes(selectedSizes.filter((s) => s !== size))
-                  }
-                }}
-              />
-              <label htmlFor={size} className="text-sm font-medium cursor-pointer">
-                {size}
-              </label>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  )
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -139,14 +83,15 @@ export default function ProductsPage() {
       {/* Search and Filters */}
       <div className="flex flex-col lg:flex-row gap-6">
         {/* Desktop Filters Sidebar */}
-        <div className="hidden lg:block w-64 space-y-6">
-          <div className="bg-white p-6 rounded-lg border sticky top-24">
-            <h2 className="text-lg font-semibold mb-4 flex items-center">
-              <SlidersHorizontal className="mr-2 h-5 w-5" />
-              Filters
-            </h2>
-            <FilterContent />
-          </div>
+        <div className="hidden lg:block w-64">
+          <SearchFilters
+            selectedCategories={selectedCategories}
+            setSelectedCategories={setSelectedCategories}
+            selectedSizes={selectedSizes}
+            setSelectedSizes={setSelectedSizes}
+            priceRange={priceRange}
+            setPriceRange={setPriceRange}
+          />
         </div>
 
         {/* Main Content */}
@@ -158,8 +103,8 @@ export default function ProductsPage() {
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <Input
-                    placeholder="Search products..."
-                    className="pl-10"
+                    placeholder="Search by name, brand, category..."
+                    className="pl-10 focus:ring-2 focus:ring-primary/20 focus:border-primary/50"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
@@ -175,12 +120,20 @@ export default function ProductsPage() {
                       Filters
                     </Button>
                   </SheetTrigger>
-                  <SheetContent side="left" className="w-80">
-                    <SheetHeader>
+                  <SheetContent side="left" className="w-80 p-0">
+                    <SheetHeader className="p-6 pb-0">
                       <SheetTitle>Filters</SheetTitle>
                     </SheetHeader>
-                    <div className="mt-6">
-                      <FilterContent />
+                    <div className="p-6 pt-0">
+                      <SearchFilters
+                        selectedCategories={selectedCategories}
+                        setSelectedCategories={setSelectedCategories}
+                        selectedSizes={selectedSizes}
+                        setSelectedSizes={setSelectedSizes}
+                        priceRange={priceRange}
+                        setPriceRange={setPriceRange}
+                        className="border-0 shadow-none p-0 sticky-none"
+                      />
                     </div>
                   </SheetContent>
                 </Sheet>
@@ -222,17 +175,104 @@ export default function ProductsPage() {
             </div>
           </div>
 
-          {/* Results Count */}
+          {/* Results Count and Active Filters */}
           <div className="mb-6">
-            <p className="text-gray-600">
-              Showing {products.length} of {pagination.total} products
-            </p>
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <p className="text-gray-600">
+                {debouncedSearch ? (
+                  <span>
+                    Found {pagination.total} products for 
+                    <span className="font-medium text-primary">"{debouncedSearch}"</span>
+                  </span>
+                ) : (
+                  <span>Showing {products.length} of {pagination.total} products</span>
+                )}
+              </p>
+              
+              {/* Active Filters */}
+              {(selectedCategories.length > 0 || selectedSizes.length > 0 || priceRange[0] > 0 || priceRange[1] < 5000) && (
+                <div className="flex flex-wrap gap-2">
+                  {selectedCategories.map((category) => (
+                    <Badge key={category} variant="secondary" className="flex items-center gap-1">
+                      {category}
+                      <X 
+                        className="h-3 w-3 cursor-pointer hover:text-destructive" 
+                        onClick={() => setSelectedCategories(prev => prev.filter(c => c !== category))}
+                      />
+                    </Badge>
+                  ))}
+                  {selectedSizes.map((size) => (
+                    <Badge key={size} variant="secondary" className="flex items-center gap-1">
+                      Size: {size}
+                      <X 
+                        className="h-3 w-3 cursor-pointer hover:text-destructive" 
+                        onClick={() => setSelectedSizes(prev => prev.filter(s => s !== size))}
+                      />
+                    </Badge>
+                  ))}
+                  {(priceRange[0] > 0 || priceRange[1] < 5000) && (
+                    <Badge variant="secondary" className="flex items-center gap-1">
+                      ₹{priceRange[0]} - ₹{priceRange[1]}
+                      <X 
+                        className="h-3 w-3 cursor-pointer hover:text-destructive" 
+                        onClick={() => setPriceRange([0, 5000])}
+                      />
+                    </Badge>
+                  )}
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => {
+                      setSelectedCategories([])
+                      setSelectedSizes([])
+                      setPriceRange([0, 5000])
+                    }}
+                    className="text-xs text-muted-foreground hover:text-destructive"
+                  >
+                    Clear all
+                  </Button>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Products Grid/List */}
           {loading ? (
             <div className="flex justify-center items-center py-20">
               <Loader2 className="h-8 w-8 animate-spin" />
+            </div>
+          ) : products.length === 0 ? (
+            <div className="text-center py-20">
+              <div className="mx-auto w-24 h-24 bg-muted rounded-full flex items-center justify-center mb-4">
+                <Search className="h-12 w-12 text-muted-foreground" />
+              </div>
+              <h3 className="text-lg font-semibold mb-2">No products found</h3>
+              <p className="text-muted-foreground mb-6">
+                {debouncedSearch 
+                  ? `No products found for "${debouncedSearch}"` 
+                  : "No products match your current filters"}
+              </p>
+              {debouncedSearch && (
+                <p className="text-sm text-muted-foreground mb-6">
+                  Try searching for similar terms or browse our categories
+                </p>
+              )}
+              <div className="flex flex-wrap gap-2 justify-center">
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setSearchQuery("")
+                    setSelectedCategories([])
+                    setSelectedSizes([])
+                    setPriceRange([0, 5000])
+                  }}
+                >
+                  Clear all filters
+                </Button>
+                <Button variant="default" onClick={() => router.push("/products")}>
+                  Browse all products
+                </Button>
+              </div>
             </div>
           ) : (
             <div

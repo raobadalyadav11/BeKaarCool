@@ -223,30 +223,34 @@ export function Footer() {
       </div>
 
       {/* Bottom Section */}
-      <div className="container py-8">
-        <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
-          <div className="flex flex-col md:flex-row items-center space-y-2 md:space-y-0 md:space-x-6">
-            <p className="text-gray-400 text-sm">© 2024 BeKaarCool. All rights reserved.</p>
-            <div className="flex items-center space-x-1 text-sm text-gray-400">
-              <span>Made with</span>
-              <Heart className="h-4 w-4 text-red-500 fill-current" />
-              <span>in India</span>
+      <div className="border-t border-gray-700">
+        <div className="container py-6">
+          <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
+            {/* Copyright */}
+            <div className="flex items-center space-x-4 text-gray-400 text-sm">
+              <p>&copy; 2024 BeKaarCool. All rights reserved.</p>
+              <div className="flex items-center space-x-1">
+                <span>Made with</span>
+                <Heart className="h-4 w-4 text-red-500 fill-current" />
+                <span>in India</span>
+              </div>
             </div>
-          </div>
 
-          <div className="flex flex-wrap items-center gap-4 text-sm">
-            <Link href="/seller/register" className="text-gray-400 hover:text-white transition-colors">
-              Become a Seller
-            </Link>
-            <Link href="/affiliate" className="text-gray-400 hover:text-white transition-colors">
-              Affiliate Program
-            </Link>
-            <Link href="/api-docs" className="text-gray-400 hover:text-white transition-colors">
-              API Documentation
-            </Link>
-            <Badge variant="secondary" className="bg-green-600 text-white">
-              Trusted Platform
-            </Badge>
+            {/* Payment Methods */}
+            <div className="flex items-center space-x-4">
+              <span className="text-gray-400 text-sm">We accept:</span>
+              <div className="flex items-center space-x-2">
+                <Badge variant="outline" className="text-xs border-gray-600 text-gray-300">
+                  Razorpay
+                </Badge>
+                <Badge variant="outline" className="text-xs border-gray-600 text-gray-300">
+                  PhonePe
+                </Badge>
+                <Badge variant="outline" className="text-xs border-gray-600 text-gray-300">
+                  COD
+                </Badge>
+              </div>
+            </div>
           </div>
         </div>
       </div>

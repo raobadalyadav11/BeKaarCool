@@ -78,20 +78,23 @@ export function ProductCard({ product, viewMode = "grid" }: ProductCardProps) {
   return (
     <Link href={`/products/${product._id}`} className="block">
       <Card
-        className={`group hover:shadow-xl transition-all duration-300 overflow-hidden cursor-pointer border-0 shadow-md hover:shadow-2xl ${
+        className={`group hover:shadow-xl transition-all duration-300 overflow-hidden cursor-pointer border hover:border-primary/20 shadow-sm hover:shadow-2xl hover:-translate-y-1 ${
           viewMode === "list" ? "flex" : ""
         }`}
       >
         <div className={`relative ${viewMode === "list" ? "w-48" : ""}`}>
-          <Image
-            src={product.images?.[0] || "/placeholder.svg"}
-            alt={product.name}
-            width={400}
-            height={400}
-            className={`object-cover group-hover:scale-105 transition-transform duration-300 ${
-              viewMode === "list" ? "w-48 h-48" : "w-full h-64"
-            }`}
-          />
+          <div className="relative overflow-hidden">
+            <Image
+              src={product.images?.[0] || "/placeholder.svg"}
+              alt={product.name}
+              width={400}
+              height={400}
+              className={`object-cover group-hover:scale-110 transition-transform duration-500 ${
+                viewMode === "list" ? "w-48 h-48" : "w-full h-64"
+              }`}
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          </div>
 
           {/* Featured Badge */}
           {product.featured && (
@@ -109,14 +112,14 @@ export function ProductCard({ product, viewMode = "grid" }: ProductCardProps) {
           )}
 
           {/* Hover Actions */}
-          <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity space-y-2">
+          <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-x-2 group-hover:translate-x-0 space-y-2">
             {!discountPercentage && (
               <>
-                <Button size="sm" variant="secondary" onClick={handleWishlist} className="w-10 h-10 p-0 bg-white/90 hover:bg-white shadow-lg">
-                  <Heart className={`h-4 w-4 ${isWishlisted ? "fill-red-500 text-red-500" : "text-gray-600"}`} />
+                <Button size="sm" variant="secondary" onClick={handleWishlist} className="w-10 h-10 p-0 bg-white/95 hover:bg-white shadow-lg backdrop-blur-sm border">
+                  <Heart className={`h-4 w-4 transition-colors ${isWishlisted ? "fill-red-500 text-red-500" : "text-gray-600 hover:text-red-500"}`} />
                 </Button>
-                <Button size="sm" variant="secondary" className="w-10 h-10 p-0 bg-white/90 hover:bg-white shadow-lg">
-                  <Eye className="h-4 w-4 text-gray-600" />
+                <Button size="sm" variant="secondary" className="w-10 h-10 p-0 bg-white/95 hover:bg-white shadow-lg backdrop-blur-sm border">
+                  <Eye className="h-4 w-4 text-gray-600 hover:text-primary" />
                 </Button>
               </>
             )}
@@ -143,7 +146,7 @@ export function ProductCard({ product, viewMode = "grid" }: ProductCardProps) {
           <div className={viewMode === "list" ? "flex justify-between items-start" : ""}>
             <div className={viewMode === "list" ? "flex-1" : ""}>
               {/* Product Name */}
-              <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2 group-hover:text-primary transition-colors duration-200">
                 {product.name}
               </h3>
 
@@ -211,10 +214,15 @@ export function ProductCard({ product, viewMode = "grid" }: ProductCardProps) {
               <Button
                 onClick={handleAddToCart}
                 disabled={product.stock === 0 || isLoading}
-                className={`${viewMode === "list" ? "w-full" : "w-full"} bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 border-0 shadow-lg`}
+                className={`${viewMode === "list" ? "w-full" : "w-full"} bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all duration-200 group-hover:scale-105`}
               >
                 <ShoppingCart className="mr-2 h-4 w-4" />
-                {isLoading ? "Adding..." : product.stock === 0 ? "Out of Stock" : "Add to Cart"}
+                {isLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Adding...
+                  </>
+                ) : product.stock === 0 ? "Out of Stock" : "Add to Cart"}
               </Button>
             </div>
           </div>
