@@ -4,7 +4,6 @@ const cartItemSchema = new mongoose.Schema({
   product: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Product",
-    required: true,
   },
   quantity: {
     type: Number,
@@ -24,6 +23,9 @@ const cartItemSchema = new mongoose.Schema({
     required: true,
   },
   customization: {
+    elements: [{ type: mongoose.Schema.Types.Mixed }],
+    canvasWidth: Number,
+    canvasHeight: Number,
     design: String,
     text: String,
     position: {
@@ -32,6 +34,13 @@ const cartItemSchema = new mongoose.Schema({
     },
     font: String,
     textColor: String,
+  },
+  customProduct: {
+    type: {
+      type: String,
+    },
+    name: String,
+    basePrice: Number,
   },
 })
 
@@ -75,4 +84,9 @@ const cartSchema = new mongoose.Schema({
 
 cartSchema.index({ user: 1 })
 
-export const Cart = mongoose.models.Cart || mongoose.model("Cart", cartSchema)
+// Delete existing model to avoid conflicts
+if (mongoose.models.Cart) {
+  delete mongoose.models.Cart
+}
+
+export const Cart = mongoose.model("Cart", cartSchema)

@@ -175,9 +175,13 @@ export default function CheckoutPage() {
             })
 
             if (verifyResponse.ok) {
-              const order = await verifyResponse.json()
-              dispatch(clearCart())
-              router.push(`/orders/${order._id}?success=true`)
+              const result = await verifyResponse.json()
+              if (result.verified && result.order) {
+                dispatch(clearCart())
+                router.push(`/orders/${result.order._id}?success=true`)
+              } else {
+                throw new Error("Payment verification failed")
+              }
             } else {
               throw new Error("Payment verification failed")
             }

@@ -109,8 +109,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Create order
+    const orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`
+    
     const order = new Order({
+      orderNumber,
       user: userId,
+      customer: userId,
       items: items.map((item: any) => ({
         ...item,
         seller: item.sellerId, // Assuming sellerId is provided

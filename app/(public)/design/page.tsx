@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react"
 import { useSession } from "next-auth/react"
+import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -161,8 +162,19 @@ export default function DesignStudioPage() {
   const { data: session } = useSession()
   const { toast } = useToast()
   const canvasRef = useRef<HTMLDivElement>(null)
+  const router = useRouter()
 
   const [selectedProduct, setSelectedProduct] = useState<Product>(products[0])
+  const [productFromUrl, setProductFromUrl] = useState<string | null>(null)
+
+  useEffect(() => {
+    // Check if product ID is in URL params
+    const urlParams = new URLSearchParams(window.location.search)
+    const productId = urlParams.get('product')
+    if (productId) {
+      setProductFromUrl(productId)
+    }
+  }, [])
   const [elements, setElements] = useState<DesignElement[]>([])
   const [selectedElement, setSelectedElement] = useState<string | null>(null)
   const [tool, setTool] = useState<"select" | "text" | "shape" | "image">("select")

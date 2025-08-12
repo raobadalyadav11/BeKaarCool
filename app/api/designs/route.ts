@@ -1,36 +1,17 @@
 import { type NextRequest, NextResponse } from "next/server"
+import { connectDB } from "@/lib/mongodb"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
-import { connectDB } from "@/lib/mongodb"
+import { resolveUserId } from "@/lib/auth-utils"
 import mongoose from "mongoose"
 
 const designSchema = new mongoose.Schema({
   name: { type: String, required: true },
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+  user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
   productType: { type: String, required: true },
-  elements: [
-    {
-      id: String,
-      type: { type: String, enum: ["text", "shape", "image"] },
-      x: Number,
-      y: Number,
-      width: Number,
-      height: Number,
-      rotation: Number,
-      content: String,
-      fontSize: Number,
-      fontFamily: String,
-      color: String,
-      backgroundColor: String,
-      borderColor: String,
-      borderWidth: Number,
-      src: String,
-      visible: Boolean,
-      locked: Boolean,
-    },
-  ],
-  canvasWidth: Number,
-  canvasHeight: Number,
+  elements: [{ type: mongoose.Schema.Types.Mixed }],
+  canvasWidth: { type: Number, required: true },
+  canvasHeight: { type: Number, required: true },
   thumbnail: String,
   isPublic: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now },
@@ -47,6 +28,7 @@ export async function GET(request: NextRequest) {
     }
 
     await connectDB()
+    const userId = await resolveUserId(session.user.id, session.user.email)
 
     const { searchParams } = new URL(request.url)
     const page = Number.parseInt(searchParams.get("page") || "1")
@@ -54,13 +36,16 @@ export async function GET(request: NextRequest) {
     const productType = searchParams.get("productType")
 
     const skip = (page - 1) * limit
-    const filter: any = { userId: session.user.id }
+    const filter: any = { user: userId }
 
     if (productType) {
       filter.productType = productType
     }
 
-    const designs = await Design.find(filter).sort({ updatedAt: -1 }).skip(skip).limit(limit)
+    const designs = await Design.find(filter)
+      .sort({ updatedAt: -1 })
+      .skip(skip)
+      .limit(limit)
 
     const total = await Design.countDocuments(filter)
 
@@ -87,16 +72,17 @@ export async function POST(request: NextRequest) {
     }
 
     await connectDB()
+    const userId = await resolveUserId(session.user.id, session.user.email)
 
     const { name, productType, elements, canvasWidth, canvasHeight, isPublic } = await request.json()
 
-    if (!name || !productType || !elements) {
+    if (!name || !productType || !elements || !canvasWidth || !canvasHeight) {
       return NextResponse.json({ message: "Missing required fields" }, { status: 400 })
     }
 
     const design = new Design({
       name,
-      userId: session.user.id,
+      user: userId,
       productType,
       elements,
       canvasWidth,

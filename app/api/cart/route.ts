@@ -40,12 +40,15 @@ export async function GET(request: NextRequest) {
       await cart.save()
     }
 
-    // Filter out inactive products
-    cart.items = cart.items.filter((item: any) => item.product && item.product.isActive)
+    // Filter out inactive products (keep custom products)
+    cart.items = cart.items.filter((item: any) => 
+      item.customProduct || (item.product && item.product.isActive)
+    )
 
     // Recalculate totals
     cart.subtotal = cart.items.reduce((sum: number, item: any) => {
-      return sum + item.product.price * item.quantity
+      const price = item.product?.price || item.price || 0
+      return sum + price * item.quantity
     }, 0)
 
     cart.tax = cart.subtotal * 0.18 // 18% GST
@@ -73,62 +76,68 @@ export async function POST(request: NextRequest) {
     // Resolve user ID to ensure it's a valid MongoDB ObjectId
     const userId = await resolveUserId(session.user.id, session.user.email)
 
-    const { productId, quantity, size, color, customization } = await request.json()
-
-    if (!productId || !quantity || quantity < 1) {
-      return NextResponse.json({ message: "Invalid product or quantity" }, { status: 400 })
-    }
-
-    const product = await Product.findById(productId).populate("seller", "name")
-    if (!product || !product.isActive) {
-      return NextResponse.json({ message: "Product not found or inactive" }, { status: 404 })
-    }
-
-    if (product.stock < quantity) {
-      return NextResponse.json({ message: "Insufficient stock" }, { status: 400 })
-    }
+    const { productId, quantity, size, color, customization, productType, productName, basePrice } = await request.json()
 
     let cart = await Cart.findOne({ user: userId })
     if (!cart) {
       cart = new Cart({ user: userId, items: [], total: 0 })
     }
 
-    // Check if item already exists in cart
-    const existingItemIndex = cart.items.findIndex(
-      (item: any) => item.product.toString() === productId && item.size === size && item.color === color,
-    )
-
-    if (existingItemIndex > -1) {
-      const newQuantity = cart.items[existingItemIndex].quantity + quantity
-      if (newQuantity > product.stock) {
-        return NextResponse.json({ message: "Cannot add more items than available stock" }, { status: 400 })
-      }
-      cart.items[existingItemIndex].quantity = newQuantity
-    } else {
-      cart.items.push({
-        product: productId,
-        quantity,
+    // Handle custom design products
+    if (productType && productName && basePrice && customization) {
+      // This is a custom design product
+      const customItem = {
+        quantity: quantity || 1,
         size: size || "M",
         color: color || "Default",
-        customization: customization || null,
-        price: product.price,
-      })
+        customization,
+        price: basePrice,
+        customProduct: {
+          type: productType,
+          name: productName,
+          basePrice,
+        },
+      }
+      cart.items.push(customItem)
+    } else {
+      // Handle regular products
+      if (!productId || !quantity || quantity < 1) {
+        return NextResponse.json({ message: "Invalid product or quantity" }, { status: 400 })
+      }
+
+      const product = await Product.findById(productId).populate("seller", "name")
+      if (!product || !product.isActive) {
+        return NextResponse.json({ message: "Product not found or inactive" }, { status: 404 })
+      }
+
+      if (product.stock < quantity) {
+        return NextResponse.json({ message: "Insufficient stock" }, { status: 400 })
+      }
+
+      // Check if item already exists in cart
+      const existingItemIndex = cart.items.findIndex(
+        (item: any) => item.product?.toString() === productId && item.size === size && item.color === color,
+      )
+
+      if (existingItemIndex > -1) {
+        const newQuantity = cart.items[existingItemIndex].quantity + quantity
+        if (newQuantity > product.stock) {
+          return NextResponse.json({ message: "Cannot add more items than available stock" }, { status: 400 })
+        }
+        cart.items[existingItemIndex].quantity = newQuantity
+      } else {
+        cart.items.push({
+          product: productId,
+          quantity,
+          size: size || "M",
+          color: color || "Default",
+          customization: customization || null,
+          price: product.price,
+        })
+      }
     }
 
     // Recalculate totals
-    await cart.populate({
-      path: "items.product",
-      select: "price",
-    })
-
-    cart.subtotal = cart.items.reduce((sum: number, item: any) => sum + item.product.price * item.quantity, 0)
-    cart.tax = cart.subtotal * 0.18
-    cart.shipping = cart.subtotal > 999 ? 0 : 99
-    cart.total = cart.subtotal + cart.tax + cart.shipping - (cart.discount || 0)
-
-    await cart.save()
-
-    // Populate for response
     await cart.populate({
       path: "items.product",
       select: "name price originalPrice images stock seller",
@@ -137,6 +146,16 @@ export async function POST(request: NextRequest) {
         select: "name",
       },
     })
+
+    cart.subtotal = cart.items.reduce((sum: number, item: any) => {
+      const price = item.product?.price || item.price || 0
+      return sum + price * item.quantity
+    }, 0)
+    cart.tax = cart.subtotal * 0.18
+    cart.shipping = cart.subtotal > 999 ? 0 : 99
+    cart.total = cart.subtotal + cart.tax + cart.shipping - (cart.discount || 0)
+
+    await cart.save()
 
     return NextResponse.json(cart)
   } catch (error) {

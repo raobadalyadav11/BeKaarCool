@@ -33,16 +33,16 @@ interface OrderDetails {
   shippingAddress: {
     name: string
     phone: string
-    street: string
+    address: string
     city: string
     state: string
-    zipCode: string
+    pincode: string
     country: string
   }
   paymentMethod: string
   paymentStatus: string
   paymentId?: string
-  total: number
+  totalAmount: number
   subtotal: number
   shipping: number
   tax: number
@@ -375,7 +375,7 @@ export default function OrderDetailsPage({ params }: OrderPageProps) {
               <Separator />
               <div className="flex justify-between font-semibold text-lg">
                 <span>Total</span>
-                <span>₹{order.total}</span>
+                <span>₹{order.totalAmount}</span>
               </div>
             </CardContent>
           </Card>
@@ -425,9 +425,9 @@ export default function OrderDetailsPage({ params }: OrderPageProps) {
             <CardContent>
               <div className="space-y-2">
                 <p className="font-medium">{order.shippingAddress.name}</p>
-                <p className="text-sm text-gray-600">{order.shippingAddress.street}</p>
+                <p className="text-sm text-gray-600">{order.shippingAddress.address}</p>
                 <p className="text-sm text-gray-600">
-                  {order.shippingAddress.city}, {order.shippingAddress.state} {order.shippingAddress.zipCode}
+                  {order.shippingAddress.city}, {order.shippingAddress.state} {order.shippingAddress.pincode}
                 </p>
                 <p className="text-sm text-gray-600">{order.shippingAddress.country}</p>
                 <div className="pt-2 space-y-1">

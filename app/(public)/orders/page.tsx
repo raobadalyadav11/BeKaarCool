@@ -27,7 +27,7 @@ interface Order {
     size: string
     color: string
   }>
-  total: number
+  totalAmount: number
   status: string
   paymentStatus: string
   trackingNumber?: string
@@ -261,7 +261,7 @@ export default function OrdersPage() {
                       <div className="flex items-center justify-between">
                         <div className="space-y-1">
                           <p className="text-sm text-gray-600">
-                            Total: <span className="font-medium text-gray-900">₹{order.total}</span>
+                            Total: <span className="font-medium text-gray-900">₹{order.totalAmount}</span>
                           </p>
                           {order.trackingNumber && (
                             <p className="text-sm text-gray-600">

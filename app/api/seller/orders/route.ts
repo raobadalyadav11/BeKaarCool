@@ -1,9 +1,10 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
 import { connectDB } from "@/lib/mongodb"
 import { Order } from "@/models/Order"
 import { Product } from "@/models/Product"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth"
+import { resolveUserId } from "@/lib/auth-utils"
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,19 +14,22 @@ export async function GET(request: NextRequest) {
     }
 
     await connectDB()
+    const sellerId = await resolveUserId(session.user.id, session.user.email)
 
     const { searchParams } = new URL(request.url)
     const page = Number.parseInt(searchParams.get("page") || "1")
     const limit = Number.parseInt(searchParams.get("limit") || "10")
     const status = searchParams.get("status")
 
-    // Get seller's products
-    const products = await Product.find({ seller: session.user.id })
-    const productIds = products.map((p) => p._id)
-
     const skip = (page - 1) * limit
+
+    // Get seller products
+    const products = await Product.find({ seller: sellerId })
+    const productIds = products.map(p => p._id)
+
+    // Build filter
     const filter: any = {
-      "items.product": { $in: productIds },
+      "items.product": { $in: productIds }
     }
 
     if (status && status !== "all") {
@@ -33,22 +37,16 @@ export async function GET(request: NextRequest) {
     }
 
     const orders = await Order.find(filter)
-      .populate("customer", "name email")
-      .populate("items.product", "name images price")
+      .populate("user", "name email")
+      .populate("items.product", "name images")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
 
     const total = await Order.countDocuments(filter)
 
-    // Filter orders to only include seller's items
-    const filteredOrders = orders.map((order) => ({
-      ...order.toObject(),
-      items: order.items.filter((item: any) => productIds.includes(item.product._id)),
-    }))
-
     return NextResponse.json({
-      orders: filteredOrders,
+      orders,
       pagination: {
         page,
         limit,

@@ -13,18 +13,9 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     await connectDB()
-
-    // Resolve user ID to ensure it's a valid MongoDB ObjectId
     const userId = await resolveUserId(session.user.id, session.user.email)
-    
-    // Await params before using
     const { itemId } = await params
-
     const { quantity } = await request.json()
-
-    if (!quantity || quantity < 1) {
-      return NextResponse.json({ message: "Invalid quantity" }, { status: 400 })
-    }
 
     const cart = await Cart.findOne({ user: userId })
     if (!cart) {
@@ -36,7 +27,11 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ message: "Item not found in cart" }, { status: 404 })
     }
 
-    cart.items[itemIndex].quantity = quantity
+    if (quantity <= 0) {
+      cart.items.splice(itemIndex, 1)
+    } else {
+      cart.items[itemIndex].quantity = quantity
+    }
 
     // Recalculate totals
     await cart.populate({
@@ -44,14 +39,16 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       select: "price",
     })
 
-    cart.subtotal = cart.items.reduce((sum: number, item: any) => sum + item.product.price * item.quantity, 0)
+    cart.subtotal = cart.items.reduce((sum: number, item: any) => {
+      const price = item.product?.price || item.price || 0
+      return sum + price * item.quantity
+    }, 0)
     cart.tax = cart.subtotal * 0.18
     cart.shipping = cart.subtotal > 999 ? 0 : 99
     cart.total = cart.subtotal + cart.tax + cart.shipping - (cart.discount || 0)
 
     await cart.save()
 
-    // Populate for response
     await cart.populate({
       path: "items.product",
       select: "name price originalPrice images stock seller",
@@ -76,11 +73,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     }
 
     await connectDB()
-
-    // Resolve user ID to ensure it's a valid MongoDB ObjectId
     const userId = await resolveUserId(session.user.id, session.user.email)
-    
-    // Await params before using
     const { itemId } = await params
 
     const cart = await Cart.findOne({ user: userId })
@@ -96,14 +89,16 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       select: "price",
     })
 
-    cart.subtotal = cart.items.reduce((sum: number, item: any) => sum + item.product.price * item.quantity, 0)
+    cart.subtotal = cart.items.reduce((sum: number, item: any) => {
+      const price = item.product?.price || item.price || 0
+      return sum + price * item.quantity
+    }, 0)
     cart.tax = cart.subtotal * 0.18
     cart.shipping = cart.subtotal > 999 ? 0 : 99
     cart.total = cart.subtotal + cart.tax + cart.shipping - (cart.discount || 0)
 
     await cart.save()
 
-    // Populate for response
     await cart.populate({
       path: "items.product",
       select: "name price originalPrice images stock seller",

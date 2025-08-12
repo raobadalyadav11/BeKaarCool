@@ -60,7 +60,7 @@ export function ProductCard({ product, viewMode = "grid" }: ProductCardProps) {
   }
 
   return (
-    <Link href={`/products/${product._id}`}>
+    <Link href={`/products/${product._id}`} className="block">
       <Card
         className={`group hover:shadow-xl transition-all duration-300 overflow-hidden cursor-pointer ${
           viewMode === "list" ? "flex" : ""

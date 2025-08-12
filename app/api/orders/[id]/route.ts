@@ -37,7 +37,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     if (
       order.user._id.toString() !== userId &&
       session.user.role !== "admin" &&
-      !order.items.some((item: any) => item.seller.toString() === userId)
+      !order.items.some((item: any) => item.seller?.toString() === userId)
     ) {
       return NextResponse.json({ message: "Forbidden" }, { status: 403 })
     }
@@ -72,7 +72,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     // Check permissions
     const canUpdate =
       session.user.role === "admin" ||
-      order.items.some((item: any) => item.seller.toString() === userId) ||
+      order.items.some((item: any) => item.seller?.toString() === userId) ||
       (order.user.toString() === userId && ["pending", "confirmed"].includes(order.status))
 
     if (!canUpdate) {

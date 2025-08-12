@@ -2,7 +2,7 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit"
 
 interface CartItem {
   id: string
-  productId: string
+  productId: string | null
   name: string
   price: number
   originalPrice?: number
@@ -15,10 +15,16 @@ interface CartItem {
     design?: string
     text?: string
     position?: { x: number; y: number }
+    elements?: any[]
   }
   seller: {
     id: string
     name: string
+  }
+  customProduct?: {
+    type: string
+    name: string
+    basePrice: number
   }
 }
 
@@ -45,44 +51,47 @@ const initialState: CartState = {
   error: null,
 }
 
+const transformCartItem = (item: any): CartItem => ({
+  id: item._id,
+  productId: item.product?._id || null,
+  name: item.product?.name || item.customProduct?.name || 'Custom Product',
+  price: item.product?.price || item.price,
+  originalPrice: item.product?.originalPrice,
+  image: item.product?.images?.[0] || "/placeholder.svg",
+  quantity: item.quantity,
+  size: item.size,
+  color: item.color,
+  customization: item.customization,
+  seller: item.product?.seller ? {
+    id: item.product.seller._id,
+    name: item.product.seller.name,
+  } : { id: 'custom', name: 'Custom Design' },
+  stock: item.product?.stock || 999,
+  customProduct: item.customProduct,
+})
+
 export const fetchCart = createAsyncThunk("cart/fetchCart", async () => {
   const response = await fetch("/api/cart")
   if (!response.ok) throw new Error("Failed to fetch cart")
   const data = await response.json()
   
-  // Transform API response to match Redux state structure
-  const transformedItems = data.items.map((item: any) => ({
-    id: item._id,
-    productId: item.product._id,
-    name: item.product.name,
-    price: item.product.price,
-    originalPrice: item.product.originalPrice,
-    image: item.product.images[0] || "/placeholder.svg",
-    quantity: item.quantity,
-    size: item.size,
-    color: item.color,
-    customization: item.customization,
-    seller: {
-      id: item.product.seller._id,
-      name: item.product.seller.name,
-    },
-    stock: item.product.stock,
-  }))
-  
   return {
     ...data,
-    items: transformedItems,
+    items: data.items.map(transformCartItem),
   }
 })
 
 export const addToCart = createAsyncThunk(
   "cart/addToCart",
   async (item: {
-    productId: string
+    productId?: string
     quantity: number
     size: string
     color: string
     customization?: any
+    productType?: string
+    productName?: string
+    basePrice?: number
   }) => {
     const response = await fetch("/api/cart", {
       method: "POST",
@@ -95,28 +104,9 @@ export const addToCart = createAsyncThunk(
     }
     const data = await response.json()
     
-    // Transform API response to match Redux state structure
-    const transformedItems = data.items.map((item: any) => ({
-      id: item._id,
-      productId: item.product._id,
-      name: item.product.name,
-      price: item.product.price,
-      originalPrice: item.product.originalPrice,
-      image: item.product.images[0] || "/placeholder.svg",
-      quantity: item.quantity,
-      size: item.size,
-      color: item.color,
-      customization: item.customization,
-      seller: {
-        id: item.product.seller._id,
-        name: item.product.seller.name,
-      },
-      stock: item.product.stock,
-    }))
-    
     return {
       ...data,
-      items: transformedItems,
+      items: data.items.map(transformCartItem),
     }
   },
 )
@@ -132,28 +122,9 @@ export const updateCartItem = createAsyncThunk(
     if (!response.ok) throw new Error("Failed to update cart item")
     const data = await response.json()
     
-    // Transform API response to match Redux state structure
-    const transformedItems = data.items.map((item: any) => ({
-      id: item._id,
-      productId: item.product._id,
-      name: item.product.name,
-      price: item.product.price,
-      originalPrice: item.product.originalPrice,
-      image: item.product.images[0] || "/placeholder.svg",
-      quantity: item.quantity,
-      size: item.size,
-      color: item.color,
-      customization: item.customization,
-      seller: {
-        id: item.product.seller._id,
-        name: item.product.seller.name,
-      },
-      stock: item.product.stock,
-    }))
-    
     return {
       ...data,
-      items: transformedItems,
+      items: data.items.map(transformCartItem),
     }
   },
 )
@@ -165,28 +136,9 @@ export const removeFromCart = createAsyncThunk("cart/removeFromCart", async (ite
   if (!response.ok) throw new Error("Failed to remove from cart")
   const data = await response.json()
   
-  // Transform API response to match Redux state structure
-  const transformedItems = data.items.map((item: any) => ({
-    id: item._id,
-    productId: item.product._id,
-    name: item.product.name,
-    price: item.product.price,
-    originalPrice: item.product.originalPrice,
-    image: item.product.images[0] || "/placeholder.svg",
-    quantity: item.quantity,
-    size: item.size,
-    color: item.color,
-    customization: item.customization,
-    seller: {
-      id: item.product.seller._id,
-      name: item.product.seller.name,
-    },
-    stock: item.product.stock,
-  }))
-  
   return {
     ...data,
-    items: transformedItems,
+    items: data.items.map(transformCartItem),
   }
 })
 
