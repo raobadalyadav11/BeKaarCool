@@ -84,7 +84,7 @@ export function Header() {
             <span className="text-white font-bold text-sm">D</span>
           </div>
           <span className="font-bold text-xl bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            Draprly
+            BeKaarCool
           </span>
         </Link>
 

@@ -116,7 +116,7 @@ export default function SellerDashboard() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Seller Dashboard</h1>
+          <h1 className="text-3xl font-bold text-gray-900">BeKaarCool Seller Dashboard</h1>
           <p className="text-gray-600">Manage your products and track your performance</p>
         </div>
         <div className="flex space-x-3">

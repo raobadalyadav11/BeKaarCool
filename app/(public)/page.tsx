@@ -197,14 +197,14 @@ export default function HomePage() {
               <div className="space-y-4">
                 <Badge className="bg-white/20 text-white border-white/30">🎨 Design Studio Now Live</Badge>
                 <h1 className="text-4xl lg:text-6xl font-bold leading-tight">
-                  Create & Sell
+                  BeKaarCool
                   <span className="block bg-gradient-to-r from-yellow-300 to-orange-300 bg-clip-text text-transparent">
                     Custom Products
                   </span>
                 </h1>
                 <p className="text-xl text-blue-100 leading-relaxed">
-                  Transform your creativity into premium custom clothing, accessories, and more. Design, print, and sell
-                  with our comprehensive e-commerce platform.
+                  Transform your creativity into premium custom products with BeKaarCool. Design, print, and sell
+                  with India's coolest custom product marketplace.
                 </p>
               </div>
 
@@ -326,7 +326,7 @@ export default function HomePage() {
       <section className="py-16 bg-gray-50">
         <div className="container">
           <div className="text-center mb-12">
-            <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">Why Choose Draprly?</h2>
+            <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">Why Choose BeKaarCool?</h2>
             <p className="text-xl text-gray-600">Everything you need to create and sell custom products</p>
           </div>
 

@@ -74,14 +74,14 @@ export default function TrackOrderPage() {
           {
             status: "Order Confirmed",
             description: "Your order has been confirmed and is being prepared",
-            location: "Draprly Warehouse, Mumbai",
+            location: "BeKaarCool Warehouse, Mumbai",
             timestamp: "Dec 20, 2024 at 2:30 PM",
             completed: true,
           },
           {
             status: "Packed",
             description: "Your order has been packed and ready for shipment",
-            location: "Draprly Warehouse, Mumbai",
+            location: "BeKaarCool Warehouse, Mumbai",
             timestamp: "Dec 21, 2024 at 10:15 AM",
             completed: true,
           },

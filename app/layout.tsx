@@ -10,12 +10,12 @@ import Script from "next/script";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Draprly - Custom Print-on-Demand Platform",
+  title: "BeKaarCool - Custom Print-on-Demand Platform",
   description:
     "Create, customize, and sell premium custom clothing and accessories with advanced design tools",
   keywords:
     "custom clothing, print on demand, design studio, e-commerce, canvas editor",
-  authors: [{ name: "Draprly Team" }],
+  authors: [{ name: "BeKaarCool Team" }],
   generator: "v0.dev",
 };
 

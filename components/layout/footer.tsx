@@ -74,7 +74,7 @@ export function Footer() {
                   <span className="text-white font-bold text-lg">D</span>
                 </div>
                 <span className="font-bold text-2xl bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-                  Draprly
+                  BeKaarCool
                 </span>
               </div>
               <p className="text-gray-300 leading-relaxed">
@@ -169,7 +169,7 @@ export function Footer() {
                   <Mail className="h-5 w-5 text-blue-400" />
                   <div>
                     <p className="font-medium">Email</p>
-                    <p className="text-sm">support@draprly.com</p>
+                    <p className="text-sm">support@bekaarcool.com</p>
                   </div>
                 </div>
                 <div className="flex items-center space-x-3 text-gray-300">
@@ -226,7 +226,7 @@ export function Footer() {
       <div className="container py-8">
         <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
           <div className="flex flex-col md:flex-row items-center space-y-2 md:space-y-0 md:space-x-6">
-            <p className="text-gray-400 text-sm">© 2024 Draprly. All rights reserved.</p>
+            <p className="text-gray-400 text-sm">© 2024 BeKaarCool. All rights reserved.</p>
             <div className="flex items-center space-x-1 text-sm text-gray-400">
               <span>Made with</span>
               <Heart className="h-4 w-4 text-red-500 fill-current" />

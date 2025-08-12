@@ -160,7 +160,7 @@ export default function CheckoutPage() {
           key,
           amount: finalTotal * 100,
           currency: "INR",
-          name: "Draprly",
+          name: "BeKaarCool",
           description: "Order Payment",
           order_id: orderId,
           handler: async (response: any) => {

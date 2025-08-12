@@ -20,7 +20,7 @@ const seedData = {
   users: [
     {
       name: "Admin User",
-      email: "admin@draprly.com",
+      email: "admin@bekaarcool.com",
       password: bcrypt.hashSync("admin123", 12), // Fixed: Use hashSync for synchronous hashing
       role: "admin",
       isVerified: true,
@@ -485,7 +485,7 @@ async function seedDatabase() {
 
     // Insert coupons with createdBy field
     console.log("Inserting coupons...");
-    const adminUserId = userMap.get("admin@draprly.com"); // Admin creates the coupons
+    const adminUserId = userMap.get("admin@bekaarcool.com"); // Admin creates the coupons
     const couponsWithCreator = seedData.coupons.map(coupon => ({
       ...coupon,
       createdBy: adminUserId,

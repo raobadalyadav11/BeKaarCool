@@ -104,7 +104,7 @@ export async function POST() {
       // Create a default seller
       seller = new User({
         name: 'Default Seller',
-        email: 'seller@draprly.com',
+        email: 'seller@bekaarcool.com',
         role: 'seller',
         isVerified: true,
       })

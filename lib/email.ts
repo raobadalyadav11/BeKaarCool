@@ -16,12 +16,12 @@ export async function sendVerificationEmail(email: string, name: string, token: 
   const mailOptions = {
     from: process.env.FROM_EMAIL,
     to: email,
-    subject: "Verify your Draprly account",
+    subject: "Verify your BeKaarCool account",
     html: `
       <div style="max-width: 600px; margin: 0 auto; padding: 20px; font-family: Arial, sans-serif;">
-        <h1 style="color: #333; text-align: center;">Welcome to Draprly!</h1>
+        <h1 style="color: #333; text-align: center;">Welcome to BeKaarCool!</h1>
         <p>Hi ${name},</p>
-        <p>Thank you for signing up for Draprly. Please click the button below to verify your email address:</p>
+        <p>Thank you for signing up for BeKaarCool. Please click the button below to verify your email address:</p>
         <div style="text-align: center; margin: 30px 0;">
           <a href="${verificationUrl}" style="background-color: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">
             Verify Email Address
@@ -30,10 +30,10 @@ export async function sendVerificationEmail(email: string, name: string, token: 
         <p>If the button doesn't work, you can also copy and paste this link into your browser:</p>
         <p style="word-break: break-all; color: #007bff;">${verificationUrl}</p>
         <p>This link will expire in 24 hours.</p>
-        <p>If you didn't create an account with Draprly, you can safely ignore this email.</p>
+        <p>If you didn't create an account with BeKaarCool, you can safely ignore this email.</p>
         <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
         <p style="color: #666; font-size: 12px; text-align: center;">
-          This email was sent by Draprly. If you have any questions, please contact us at ${process.env.SUPPORT_EMAIL}
+          This email was sent by BeKaarCool. If you have any questions, please contact us at ${process.env.SUPPORT_EMAIL}
         </p>
       </div>
     `,
@@ -48,12 +48,12 @@ export async function sendPasswordResetEmail(email: string, name: string, token:
   const mailOptions = {
     from: process.env.FROM_EMAIL,
     to: email,
-    subject: "Reset your Draprly password",
+    subject: "Reset your BeKaarCool password",
     html: `
       <div style="max-width: 600px; margin: 0 auto; padding: 20px; font-family: Arial, sans-serif;">
         <h1 style="color: #333; text-align: center;">Password Reset Request</h1>
         <p>Hi ${name},</p>
-        <p>We received a request to reset your password for your Draprly account. Click the button below to reset your password:</p>
+        <p>We received a request to reset your password for your BeKaarCool account. Click the button below to reset your password:</p>
         <div style="text-align: center; margin: 30px 0;">
           <a href="${resetUrl}" style="background-color: #dc3545; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">
             Reset Password
@@ -65,7 +65,7 @@ export async function sendPasswordResetEmail(email: string, name: string, token:
         <p>If you didn't request a password reset, you can safely ignore this email. Your password will not be changed.</p>
         <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
         <p style="color: #666; font-size: 12px; text-align: center;">
-          This email was sent by Draprly. If you have any questions, please contact us at ${process.env.SUPPORT_EMAIL}
+          This email was sent by BeKaarCool. If you have any questions, please contact us at ${process.env.SUPPORT_EMAIL}
         </p>
       </div>
     `,
@@ -136,7 +136,7 @@ export async function sendOrderConfirmationEmail(email: string, name: string, or
         
         <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
         <p style="color: #666; font-size: 12px; text-align: center;">
-          This email was sent by Draprly. If you have any questions, please contact us at ${process.env.SUPPORT_EMAIL}
+          This email was sent by BeKaarCool. If you have any questions, please contact us at ${process.env.SUPPORT_EMAIL}
         </p>
       </div>
     `,
@@ -184,7 +184,7 @@ export async function sendOrderStatusUpdateEmail(email: string, name: string, or
         
         <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
         <p style="color: #666; font-size: 12px; text-align: center;">
-          This email was sent by Draprly. If you have any questions, please contact us at ${process.env.SUPPORT_EMAIL}
+          This email was sent by BeKaarCool. If you have any questions, please contact us at ${process.env.SUPPORT_EMAIL}
         </p>
       </div>
     `,
@@ -247,7 +247,7 @@ export async function sendSupportTicketEmail(ticket: any) {
         
         <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
         <p style="color: #666; font-size: 12px; text-align: center;">
-          This email was sent by Draprly Support System.
+          This email was sent by BeKaarCool Support System.
         </p>
       </div>
     `,
@@ -262,7 +262,7 @@ export async function sendSupportTicketEmail(ticket: any) {
       <div style="max-width: 600px; margin: 0 auto; padding: 20px; font-family: Arial, sans-serif;">
         <h1 style="color: #333; text-align: center;">Support Ticket Created</h1>
         <p>Hi ${ticket.user?.name},</p>
-        <p>Thank you for contacting Draprly support. We've received your support ticket and our team will review it shortly.</p>
+        <p>Thank you for contacting BeKaarCool support. We've received your support ticket and our team will review it shortly.</p>
         
         <div style="background-color: #f8f9fa; padding: 20px; border-radius: 5px; margin: 20px 0;">
           <h2 style="margin-top: 0;">Your Ticket Details</h2>
@@ -284,7 +284,7 @@ export async function sendSupportTicketEmail(ticket: any) {
         
         <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
         <p style="color: #666; font-size: 12px; text-align: center;">
-          This email was sent by Draprly. If you have any questions, please contact us at ${process.env.SUPPORT_EMAIL}
+          This email was sent by BeKaarCool. If you have any questions, please contact us at ${process.env.SUPPORT_EMAIL}
         </p>
       </div>
     `,
