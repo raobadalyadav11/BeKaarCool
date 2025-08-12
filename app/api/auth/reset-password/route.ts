@@ -2,6 +2,7 @@ import { type NextRequest, NextResponse } from "next/server"
 import { connectDB } from "@/lib/mongodb"
 import { User } from "@/models/User"
 import { sendPasswordResetEmail } from "@/lib/email"
+import bcrypt from "bcryptjs"
 import crypto from "crypto"
 
 export async function POST(request: NextRequest) {
@@ -39,7 +40,46 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       message: "Password reset email sent successfully",
-      token: resetToken, // Only for development, remove in production
+    })
+  } catch (error) {
+    console.error("Password reset error:", error)
+    return NextResponse.json({ message: "Internal server error" }, { status: 500 })
+  }
+}
+
+export async function PUT(request: NextRequest) {
+  try {
+    await connectDB()
+
+    const { token, password } = await request.json()
+
+    if (!token || !password) {
+      return NextResponse.json({ message: "Token and password are required" }, { status: 400 })
+    }
+
+    // Find user with valid reset token
+    const user = await User.findOne({
+      resetToken: token,
+      resetTokenExpiry: { $gt: new Date() },
+    })
+
+    if (!user) {
+      return NextResponse.json({ message: "Invalid or expired reset token" }, { status: 400 })
+    }
+
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(password, 12)
+
+    // Update user password and clear reset token
+    await User.findByIdAndUpdate(user._id, {
+      password: hashedPassword,
+      resetToken: undefined,
+      resetTokenExpiry: undefined,
+      updatedAt: new Date(),
+    })
+
+    return NextResponse.json({
+      message: "Password reset successfully",
     })
   } catch (error) {
     console.error("Password reset error:", error)

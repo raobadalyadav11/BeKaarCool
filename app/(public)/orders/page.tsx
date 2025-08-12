@@ -237,14 +237,14 @@ export default function OrdersPage() {
                         <div key={index} className="flex items-center space-x-4">
                           <div className="relative h-16 w-16 rounded-md overflow-hidden bg-gray-100">
                             <Image
-                              src={item.product.images[0] || "/placeholder.svg"}
-                              alt={item.product.name}
+                              src={item.product?.images?.[0] || "/placeholder.svg"}
+                              alt={item.product?.name}
                               fill
                               className="object-cover"
                             />
                           </div>
                           <div className="flex-1">
-                            <h4 className="font-medium text-gray-900">{item.product.name}</h4>
+                            <h4 className="font-medium text-gray-900">{item.product?.name}</h4>
                             <p className="text-sm text-gray-600">
                               Size: {item.size} • Color: {item.color} • Qty: {item.quantity}
                             </p>

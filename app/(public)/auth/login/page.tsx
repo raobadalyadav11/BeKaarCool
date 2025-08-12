@@ -1,16 +1,18 @@
 "use client"
 
-import { useState } from "react"
-import { signIn, getSession } from "next-auth/react"
+import { useState, useEffect } from "react"
+import { signIn, getSession, useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Eye, EyeOff, Mail, Lock, Loader2 } from "lucide-react"
+import { Separator } from "@/components/ui/separator"
+import { Eye, EyeOff, Mail, Lock, Loader2, Chrome, CheckCircle } from "lucide-react"
 import Link from "next/link"
 import { useForm } from "react-hook-form"
+import { toast } from "sonner"
 
 interface LoginForm {
   email: string
@@ -20,8 +22,11 @@ interface LoginForm {
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [googleLoading, setGoogleLoading] = useState(false)
   const [error, setError] = useState("")
+  const [success, setSuccess] = useState("")
   const router = useRouter()
+  const { data: session, status } = useSession()
 
   const {
     register,
@@ -29,9 +34,18 @@ export default function LoginPage() {
     formState: { errors },
   } = useForm<LoginForm>()
 
+  useEffect(() => {
+    if (session) {
+      const redirectPath = session.user.role === "admin" ? "/admin" : 
+                          session.user.role === "seller" ? "/seller" : "/"
+      router.push(redirectPath)
+    }
+  }, [session, router])
+
   const onSubmit = async (data: LoginForm) => {
     setLoading(true)
     setError("")
+    setSuccess("")
 
     try {
       const result = await signIn("credentials", {
@@ -41,31 +55,49 @@ export default function LoginPage() {
       })
 
       if (result?.error) {
-        setError("Invalid email or password")
+        setError("Invalid email or password. Please check your credentials.")
+        toast.error("Login failed")
       } else {
+        setSuccess("Login successful! Redirecting...")
+        toast.success("Welcome back!")
+        
         const session = await getSession()
-        if (session?.user?.role === "admin") {
-          router.push("/admin")
-        } else if (session?.user?.role === "seller") {
-          router.push("/seller")
-        } else {
-          router.push("/")
-        }
+        const redirectPath = session?.user?.role === "admin" ? "/admin" : 
+                            session?.user?.role === "seller" ? "/seller" : "/"
+        
+        setTimeout(() => {
+          router.push(redirectPath)
+        }, 1000)
       }
     } catch (error) {
       setError("An error occurred. Please try again.")
+      toast.error("Login failed")
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleGoogleSignIn = async () => {
+    setGoogleLoading(true)
+    try {
+      await signIn("google", { callbackUrl: "/" })
+    } catch (error) {
+      toast.error("Google sign-in failed")
+    } finally {
+      setGoogleLoading(false)
     }
   }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold text-center">Sign in to BeKaarCool</CardTitle>
-          <CardDescription className="text-center">
-            Enter your email and password to access your account
+        <CardHeader className="space-y-1 text-center">
+          <div className="mx-auto w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mb-4">
+            <Lock className="h-6 w-6 text-blue-600" />
+          </div>
+          <CardTitle className="text-2xl font-bold">Welcome back</CardTitle>
+          <CardDescription>
+            Sign in to your BeKaarCool account to continue
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -73,6 +105,13 @@ export default function LoginPage() {
             {error && (
               <Alert variant="destructive">
                 <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+
+            {success && (
+              <Alert className="border-green-200 bg-green-50">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+                <AlertDescription className="text-green-800">{success}</AlertDescription>
               </Alert>
             )}
 
@@ -135,7 +174,7 @@ export default function LoginPage() {
               </Link>
             </div>
 
-            <Button type="submit" className="w-full" disabled={loading}>
+            <Button type="submit" className="w-full" disabled={loading || googleLoading}>
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -146,19 +185,37 @@ export default function LoginPage() {
               )}
             </Button>
 
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <Separator className="w-full" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-white px-2 text-muted-foreground">Or continue with</span>
+              </div>
+            </div>
+
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              onClick={handleGoogleSignIn}
+              disabled={loading || googleLoading}
+            >
+              {googleLoading ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Chrome className="mr-2 h-4 w-4" />
+              )}
+              Sign in with Google
+            </Button>
+
             <div className="text-center">
               <span className="text-sm text-gray-600">
                 Don't have an account?{" "}
-                <Link href="/auth/register" className="text-blue-600 hover:underline">
+                <Link href="/auth/register" className="text-blue-600 hover:underline font-medium">
                   Sign up
                 </Link>
               </span>
-           <button
-        className="bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600"
-        onClick={() => signIn("google")}
-      >
-        Sign in with Google
-      </button>
             </div>
           </form>
         </CardContent>

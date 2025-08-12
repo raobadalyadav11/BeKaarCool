@@ -1,7 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import { signIn } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -9,9 +10,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Eye, EyeOff, User, Mail, Lock, Phone, Loader2 } from "lucide-react"
+import { Separator } from "@/components/ui/separator"
+import { Progress } from "@/components/ui/progress"
+import { Eye, EyeOff, User, Mail, Lock, Phone, Loader2, Chrome, CheckCircle, UserPlus } from "lucide-react"
 import Link from "next/link"
 import { useForm } from "react-hook-form"
+import { toast } from "sonner"
 
 interface RegisterForm {
   name: string
@@ -27,8 +31,10 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [googleLoading, setGoogleLoading] = useState(false)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
+  const [passwordStrength, setPasswordStrength] = useState(0)
   const router = useRouter()
 
   const {
@@ -40,6 +46,21 @@ export default function RegisterPage() {
   } = useForm<RegisterForm>()
 
   const password = watch("password")
+  
+  const calculatePasswordStrength = (password: string) => {
+    let strength = 0
+    if (password.length >= 6) strength += 25
+    if (/[a-z]/.test(password)) strength += 25
+    if (/[A-Z]/.test(password)) strength += 25
+    if (/\d/.test(password)) strength += 25
+    return strength
+  }
+
+  useEffect(() => {
+    if (password) {
+      setPasswordStrength(calculatePasswordStrength(password))
+    }
+  }, [password])
 
   const onSubmit = async (data: RegisterForm) => {
     setLoading(true)
@@ -68,22 +89,41 @@ export default function RegisterPage() {
       }
 
       setSuccess("Registration successful! Please check your email to verify your account.")
+      toast.success("Account created successfully!")
+      
       setTimeout(() => {
         router.push("/auth/login")
       }, 3000)
     } catch (error: any) {
       setError(error.message || "An error occurred. Please try again.")
+      toast.error("Registration failed")
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleGoogleSignUp = async () => {
+    setGoogleLoading(true)
+    try {
+      await signIn("google", { callbackUrl: "/" })
+    } catch (error) {
+      toast.error("Google sign-up failed")
+    } finally {
+      setGoogleLoading(false)
     }
   }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold text-center">Create your account</CardTitle>
-          <CardDescription className="text-center">Join BeKaarCool and start your journey</CardDescription>
+        <CardHeader className="space-y-1 text-center">
+          <div className="mx-auto w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mb-4">
+            <UserPlus className="h-6 w-6 text-green-600" />
+          </div>
+          <CardTitle className="text-2xl font-bold">Create your account</CardTitle>
+          <CardDescription>
+            Join BeKaarCool and start your journey with us
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -197,6 +237,9 @@ export default function RegisterPage() {
                         "Password must contain at least one uppercase letter, one lowercase letter, and one number",
                     },
                   })}
+                  onChange={(e) => {
+                    setPasswordStrength(calculatePasswordStrength(e.target.value))
+                  }}
                 />
                 <button
                   type="button"
@@ -210,6 +253,20 @@ export default function RegisterPage() {
                   )}
                 </button>
               </div>
+              {password && (
+                <div className="space-y-1">
+                  <div className="flex justify-between text-xs">
+                    <span>Password strength</span>
+                    <span className={`font-medium ${
+                      passwordStrength < 50 ? 'text-red-500' : 
+                      passwordStrength < 75 ? 'text-yellow-500' : 'text-green-500'
+                    }`}>
+                      {passwordStrength < 50 ? 'Weak' : passwordStrength < 75 ? 'Medium' : 'Strong'}
+                    </span>
+                  </div>
+                  <Progress value={passwordStrength} className="h-2" />
+                </div>
+              )}
               {errors.password && <p className="text-sm text-red-600">{errors.password.message}</p>}
             </div>
 
@@ -262,7 +319,7 @@ export default function RegisterPage() {
             </div>
             {errors.agreeToTerms && <p className="text-sm text-red-600">{errors.agreeToTerms.message}</p>}
 
-            <Button type="submit" className="w-full" disabled={loading}>
+            <Button type="submit" className="w-full" disabled={loading || googleLoading}>
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -273,10 +330,34 @@ export default function RegisterPage() {
               )}
             </Button>
 
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <Separator className="w-full" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-white px-2 text-muted-foreground">Or continue with</span>
+              </div>
+            </div>
+
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              onClick={handleGoogleSignUp}
+              disabled={loading || googleLoading}
+            >
+              {googleLoading ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Chrome className="mr-2 h-4 w-4" />
+              )}
+              Sign up with Google
+            </Button>
+
             <div className="text-center">
               <span className="text-sm text-gray-600">
                 Already have an account?{" "}
-                <Link href="/auth/login" className="text-blue-600 hover:underline">
+                <Link href="/auth/login" className="text-blue-600 hover:underline font-medium">
                   Sign in
                 </Link>
               </span>
