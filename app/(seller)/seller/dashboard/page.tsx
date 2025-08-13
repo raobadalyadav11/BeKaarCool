@@ -112,22 +112,22 @@ export default function SellerDashboard() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">BeKaarCool Seller Dashboard</h1>
-          <p className="text-gray-600">Manage your products and track your performance</p>
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">Dashboard</h1>
+          <p className="text-gray-600 mt-1">Welcome back! Here's what's happening with your store today.</p>
         </div>
-        <div className="flex space-x-3">
+        <div className="flex flex-wrap gap-3">
           <Link href="/seller/products/new">
-            <Button>
+            <Button className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg">
               <Plus className="mr-2 h-4 w-4" />
               Add Product
             </Button>
           </Link>
           <Link href="/seller/analytics">
-            <Button variant="outline">
+            <Button variant="outline" className="border-gray-300 hover:bg-gray-50">
               <BarChart3 className="mr-2 h-4 w-4" />
               Analytics
             </Button>
@@ -138,15 +138,16 @@ export default function SellerDashboard() {
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {statCards.map((stat, index) => (
-          <Card key={index} className="hover:shadow-lg transition-shadow">
+          <Card key={index} className="group hover:shadow-xl transition-all duration-300 border-0 bg-white/70 backdrop-blur-sm hover:-translate-y-1">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">{stat.title}</p>
-                  <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-gray-600 group-hover:text-gray-700 transition-colors">{stat.title}</p>
+                  <p className="text-3xl font-bold text-gray-900 group-hover:text-gray-800 transition-colors">{stat.value}</p>
+                  <div className="h-1 w-12 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
                 </div>
-                <div className={`p-3 rounded-full ${stat.bgColor}`}>
-                  <stat.icon className={`h-6 w-6 ${stat.color}`} />
+                <div className={`p-4 rounded-2xl ${stat.bgColor} group-hover:scale-110 transition-transform duration-300 shadow-lg`}>
+                  <stat.icon className={`h-7 w-7 ${stat.color}`} />
                 </div>
               </div>
             </CardContent>
@@ -155,91 +156,105 @@ export default function SellerDashboard() {
       </div>
 
       {/* Quick Actions */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Quick Actions</CardTitle>
+      <Card className="border-0 bg-gradient-to-br from-white to-gray-50/50 shadow-xl">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-xl font-semibold text-gray-900">Quick Actions</CardTitle>
+          <p className="text-sm text-gray-600">Manage your store efficiently</p>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Link href="/seller/products/new">
-              <Button variant="outline" className="w-full h-20 flex flex-col space-y-2 bg-transparent">
-                <Plus className="h-6 w-6" />
-                <span>Add New Product</span>
-              </Button>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <Link href="/seller/products/new" className="group">
+              <div className="p-6 rounded-2xl border-2 border-dashed border-gray-200 hover:border-blue-300 hover:bg-blue-50/50 transition-all duration-300 text-center group-hover:scale-105">
+                <div className="h-12 w-12 mx-auto mb-4 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow">
+                  <Plus className="h-6 w-6 text-white" />
+                </div>
+                <h3 className="font-semibold text-gray-900 mb-1">Add Product</h3>
+                <p className="text-sm text-gray-600">Create new products</p>
+              </div>
             </Link>
-            <Link href="/seller/orders">
-              <Button variant="outline" className="w-full h-20 flex flex-col space-y-2 bg-transparent">
-                <ShoppingCart className="h-6 w-6" />
-                <span>Manage Orders</span>
-              </Button>
+            <Link href="/seller/orders" className="group">
+              <div className="p-6 rounded-2xl border-2 border-dashed border-gray-200 hover:border-green-300 hover:bg-green-50/50 transition-all duration-300 text-center group-hover:scale-105">
+                <div className="h-12 w-12 mx-auto mb-4 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow">
+                  <ShoppingCart className="h-6 w-6 text-white" />
+                </div>
+                <h3 className="font-semibold text-gray-900 mb-1">Manage Orders</h3>
+                <p className="text-sm text-gray-600">Track and fulfill orders</p>
+              </div>
             </Link>
-            <Link href="/seller/analytics">
-              <Button variant="outline" className="w-full h-20 flex flex-col space-y-2 bg-transparent">
-                <TrendingUp className="h-6 w-6" />
-                <span>View Analytics</span>
-              </Button>
+            <Link href="/seller/analytics" className="group">
+              <div className="p-6 rounded-2xl border-2 border-dashed border-gray-200 hover:border-purple-300 hover:bg-purple-50/50 transition-all duration-300 text-center group-hover:scale-105">
+                <div className="h-12 w-12 mx-auto mb-4 bg-gradient-to-br from-purple-500 to-violet-600 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow">
+                  <TrendingUp className="h-6 w-6 text-white" />
+                </div>
+                <h3 className="font-semibold text-gray-900 mb-1">View Analytics</h3>
+                <p className="text-sm text-gray-600">Analyze performance</p>
+              </div>
             </Link>
           </div>
         </CardContent>
       </Card>
 
       {/* Main Content Tabs */}
-      <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="orders">Recent Orders</TabsTrigger>
-          <TabsTrigger value="products">Top Products</TabsTrigger>
+      <Tabs defaultValue="overview" className="space-y-8">
+        <TabsList className="grid w-full grid-cols-3 bg-gray-100/50 p-1 rounded-xl">
+          <TabsTrigger value="overview" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">Overview</TabsTrigger>
+          <TabsTrigger value="orders" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">Recent Orders</TabsTrigger>
+          <TabsTrigger value="products" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">Top Products</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Performance Summary */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <TrendingUp className="mr-2 h-5 w-5" />
+            <Card className="border-0 bg-gradient-to-br from-blue-50 to-indigo-50 shadow-lg">
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center text-gray-900">
+                  <div className="h-8 w-8 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center mr-3">
+                    <TrendingUp className="h-4 w-4 text-white" />
+                  </div>
                   Performance Summary
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Pending Orders</span>
-                  <Badge variant={stats.pendingOrders > 0 ? "destructive" : "secondary"}>{stats.pendingOrders}</Badge>
+              <CardContent className="space-y-6">
+                <div className="flex justify-between items-center p-3 bg-white/60 rounded-xl">
+                  <span className="text-sm font-medium text-gray-700">Pending Orders</span>
+                  <Badge variant={stats.pendingOrders > 0 ? "destructive" : "secondary"} className="shadow-sm">{stats.pendingOrders}</Badge>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Average Rating</span>
+                <div className="flex justify-between items-center p-3 bg-white/60 rounded-xl">
+                  <span className="text-sm font-medium text-gray-700">Average Rating</span>
                   <div className="flex items-center">
                     <Star className="h-4 w-4 text-yellow-500 fill-current" />
-                    <span className="ml-1 text-sm font-medium">{stats.rating.toFixed(1)}</span>
+                    <span className="ml-1 text-sm font-semibold">{stats.rating.toFixed(1)}</span>
                   </div>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">This Month</span>
-                  <span className="text-sm font-medium text-green-600">+12.5%</span>
+                <div className="flex justify-between items-center p-3 bg-white/60 rounded-xl">
+                  <span className="text-sm font-medium text-gray-700">Growth This Month</span>
+                  <span className="text-sm font-semibold text-green-600 bg-green-100 px-2 py-1 rounded-lg">+12.5%</span>
                 </div>
               </CardContent>
             </Card>
 
             {/* Quick Stats */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Calendar className="mr-2 h-5 w-5" />
+            <Card className="border-0 bg-gradient-to-br from-green-50 to-emerald-50 shadow-lg">
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center text-gray-900">
+                  <div className="h-8 w-8 bg-gradient-to-r from-green-600 to-emerald-600 rounded-lg flex items-center justify-center mr-3">
+                    <Calendar className="h-4 w-4 text-white" />
+                  </div>
                   This Month
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">New Orders</span>
-                  <span className="text-sm font-medium">24</span>
+              <CardContent className="space-y-6">
+                <div className="flex justify-between items-center p-3 bg-white/60 rounded-xl">
+                  <span className="text-sm font-medium text-gray-700">New Orders</span>
+                  <span className="text-lg font-bold text-gray-900">24</span>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Revenue</span>
-                  <span className="text-sm font-medium">₹45,230</span>
+                <div className="flex justify-between items-center p-3 bg-white/60 rounded-xl">
+                  <span className="text-sm font-medium text-gray-700">Revenue</span>
+                  <span className="text-lg font-bold text-gray-900">₹45,230</span>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Products Sold</span>
-                  <span className="text-sm font-medium">156</span>
+                <div className="flex justify-between items-center p-3 bg-white/60 rounded-xl">
+                  <span className="text-sm font-medium text-gray-700">Products Sold</span>
+                  <span className="text-lg font-bold text-gray-900">156</span>
                 </div>
               </CardContent>
             </Card>
@@ -247,26 +262,30 @@ export default function SellerDashboard() {
         </TabsContent>
 
         <TabsContent value="orders">
-          <Card>
-            <CardHeader>
-              <CardTitle>Recent Orders</CardTitle>
+          <Card className="border-0 bg-white/70 backdrop-blur-sm shadow-xl">
+            <CardHeader className="pb-6">
+              <CardTitle className="text-xl font-semibold text-gray-900">Recent Orders</CardTitle>
+              <p className="text-sm text-gray-600">Latest orders from your customers</p>
             </CardHeader>
             <CardContent>
               {recentOrders.length === 0 ? (
-                <div className="text-center py-8">
-                  <ShoppingCart className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-600">No recent orders</p>
+                <div className="text-center py-12">
+                  <div className="h-20 w-20 mx-auto mb-6 bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl flex items-center justify-center">
+                    <ShoppingCart className="h-10 w-10 text-gray-400" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">No recent orders</h3>
+                  <p className="text-gray-600">Orders will appear here once customers start purchasing</p>
                 </div>
               ) : (
                 <div className="space-y-4">
                   {recentOrders.map((order: any) => (
-                    <div key={order._id} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div>
-                        <p className="font-medium">Order #{order.orderNumber}</p>
+                    <div key={order._id} className="flex items-center justify-between p-6 bg-gradient-to-r from-white to-gray-50 rounded-2xl border border-gray-100 hover:shadow-lg transition-all duration-300">
+                      <div className="space-y-1">
+                        <p className="font-semibold text-gray-900">Order #{order.orderNumber}</p>
                         <p className="text-sm text-gray-600">{new Date(order.createdAt).toLocaleDateString()}</p>
                       </div>
-                      <div className="text-right">
-                        <p className="font-medium">₹{order.totalAmount.toLocaleString()}</p>
+                      <div className="text-right space-y-2">
+                        <p className="font-bold text-lg text-gray-900">₹{order.totalAmount.toLocaleString()}</p>
                         <Badge
                           variant={
                             order.status === "delivered"
@@ -277,6 +296,7 @@ export default function SellerDashboard() {
                                   ? "outline"
                                   : "destructive"
                           }
+                          className="shadow-sm"
                         >
                           {order.status}
                         </Badge>
@@ -290,41 +310,53 @@ export default function SellerDashboard() {
         </TabsContent>
 
         <TabsContent value="products">
-          <Card>
-            <CardHeader>
-              <CardTitle>Top Performing Products</CardTitle>
+          <Card className="border-0 bg-white/70 backdrop-blur-sm shadow-xl">
+            <CardHeader className="pb-6">
+              <CardTitle className="text-xl font-semibold text-gray-900">Top Performing Products</CardTitle>
+              <p className="text-sm text-gray-600">Your best-selling products this month</p>
             </CardHeader>
             <CardContent>
               {topProducts.length === 0 ? (
-                <div className="text-center py-8">
-                  <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-600">No products yet</p>
+                <div className="text-center py-12">
+                  <div className="h-20 w-20 mx-auto mb-6 bg-gradient-to-br from-blue-100 to-indigo-200 rounded-2xl flex items-center justify-center">
+                    <Package className="h-10 w-10 text-blue-600" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">No products yet</h3>
+                  <p className="text-gray-600 mb-6">Start by adding your first product to get started</p>
                   <Link href="/seller/products/new">
-                    <Button className="mt-4">Add Your First Product</Button>
+                    <Button className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg">
+                      <Plus className="mr-2 h-4 w-4" />
+                      Add Your First Product
+                    </Button>
                   </Link>
                 </div>
               ) : (
                 <div className="space-y-4">
                   {topProducts.map((product: any) => (
-                    <div key={product._id} className="flex items-center justify-between p-4 border rounded-lg">
+                    <div key={product._id} className="flex items-center justify-between p-6 bg-gradient-to-r from-white to-gray-50 rounded-2xl border border-gray-100 hover:shadow-lg transition-all duration-300 group">
                       <div className="flex items-center space-x-4">
-                        <img
-                          src={product.images[0] || "/placeholder.svg"}
-                          alt={product.name}
-                          className="w-12 h-12 object-cover rounded"
-                        />
-                        <div>
-                          <p className="font-medium">{product.name}</p>
+                        <div className="relative">
+                          <img
+                            src={product.images[0] || "/placeholder.svg"}
+                            alt={product.name}
+                            className="w-16 h-16 object-cover rounded-xl shadow-md group-hover:shadow-lg transition-shadow"
+                          />
+                          <div className="absolute -top-1 -right-1 h-6 w-6 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center">
+                            <span className="text-xs font-bold text-white">#1</span>
+                          </div>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">{product.name}</p>
                           <p className="text-sm text-gray-600">
-                            {product.sold} sold • {product.views} views
+                            <span className="font-medium">{product.sold}</span> sold • <span className="font-medium">{product.views}</span> views
                           </p>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <p className="font-medium">₹{product.price.toLocaleString()}</p>
-                        <div className="flex items-center">
+                      <div className="text-right space-y-2">
+                        <p className="font-bold text-lg text-gray-900">₹{product.price.toLocaleString()}</p>
+                        <div className="flex items-center justify-end">
                           <Star className="h-4 w-4 text-yellow-500 fill-current" />
-                          <span className="ml-1 text-sm">{product.rating.toFixed(1)}</span>
+                          <span className="ml-1 text-sm font-medium">{product.rating.toFixed(1)}</span>
                         </div>
                       </div>
                     </div>

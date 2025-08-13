@@ -13,9 +13,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Search, Bell, User, Settings, LogOut, Store, Eye, Plus, MessageSquare, DollarSign } from "lucide-react"
+import { Search, Bell, User, Settings, LogOut, Store, Eye, Plus, MessageSquare, DollarSign, Menu } from "lucide-react"
 
-export function SellerHeader() {
+interface SellerHeaderProps {
+  onMenuClick?: () => void
+}
+
+export function SellerHeader({ onMenuClick }: SellerHeaderProps = {}) {
   const { data: session } = useSession()
   const [searchQuery, setSearchQuery] = useState("")
 
@@ -46,10 +50,18 @@ export function SellerHeader() {
   const unreadCount = notifications.filter((n) => n.unread).length
 
   return (
-    <header className="bg-white border-b border-gray-200 px-6 py-4">
+    <header className="bg-white/80 backdrop-blur-xl border-b border-gray-200/50 px-6 py-4 shadow-sm">
       <div className="flex items-center justify-between">
-        {/* Left side - Search */}
+        {/* Left side - Mobile menu + Search */}
         <div className="flex items-center space-x-4 flex-1 max-w-md">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="lg:hidden"
+            onClick={onMenuClick}
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
           <div className="relative w-full">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
             <Input
@@ -57,7 +69,7 @@ export function SellerHeader() {
               placeholder="Search products, orders, customers..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 pr-4"
+              className="pl-10 pr-4 border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 bg-gray-50/50"
             />
           </div>
         </div>

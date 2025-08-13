@@ -63,7 +63,7 @@ export default function LoginPage() {
         
         const session = await getSession()
         const redirectPath = session?.user?.role === "admin" ? "/admin" : 
-                            session?.user?.role === "seller" ? "/seller" : "/"
+                            session?.user?.role === "seller" ? "/seller/dashboard" : "/"
         
         setTimeout(() => {
           router.push(redirectPath)
