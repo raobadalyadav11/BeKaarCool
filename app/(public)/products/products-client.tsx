@@ -9,7 +9,7 @@ import { Filter, Search, Grid3X3, List, Loader2, X } from "lucide-react"
 import { ProductCard } from "@/components/product/product-card"
 import { SearchFilters } from "@/components/search/search-filters"
 import { useDebounce } from "@/hooks/use-debounce"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Badge } from "@/components/ui/badge"
 
 export default function ProductsPageClient() {
@@ -27,9 +27,35 @@ export default function ProductsPageClient() {
     total: 0,
     pages: 0,
   })
+  const [initialized, setInitialized] = useState(false)
 
   const router = useRouter()
+  const searchParams = useSearchParams()
   const debouncedSearch = useDebounce(searchQuery, 500)
+
+  // Initialize filters from URL parameters
+  useEffect(() => {
+    if (!initialized) {
+      const categoryParam = searchParams.get('category')
+      const searchParam = searchParams.get('search')
+      const sortParam = searchParams.get('sort')
+      const saleParam = searchParams.get('sale')
+      const recommendedParam = searchParams.get('recommended')
+      const featuredParam = searchParams.get('featured')
+      
+      if (categoryParam) {
+        setSelectedCategories([categoryParam])
+      }
+      if (searchParam) {
+        setSearchQuery(searchParam)
+      }
+      if (sortParam && ['featured', 'price-low', 'price-high', 'rating', 'newest', 'trending'].includes(sortParam)) {
+        setSortBy(sortParam)
+      }
+      
+      setInitialized(true)
+    }
+  }, [searchParams, initialized])
 
   const fetchProducts = async () => {
     setLoading(true)
@@ -59,13 +85,15 @@ export default function ProductsPageClient() {
   }
 
   useEffect(() => {
+    if (!initialized) return
+    
     // Reset to page 1 when search or filters change
     if (pagination.page !== 1 && (debouncedSearch || selectedCategories.length > 0 || selectedSizes.length > 0 || priceRange[0] > 0 || priceRange[1] < 5000)) {
       setPagination(prev => ({ ...prev, page: 1 }))
     } else {
       fetchProducts()
     }
-  }, [pagination.page, sortBy, debouncedSearch, selectedCategories, selectedSizes, priceRange])
+  }, [pagination.page, sortBy, debouncedSearch, selectedCategories, selectedSizes, priceRange, initialized])
 
   return (
     <div className="container mx-auto px-4 py-8">

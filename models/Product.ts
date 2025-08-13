@@ -60,6 +60,10 @@ const productSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  recommended: {
+    type: Boolean,
+    default: false,
+  },
   isActive: {
     type: Boolean,
     default: true,
@@ -118,6 +122,7 @@ productSchema.index({ category: 1 })
 productSchema.index({ price: 1 })
 productSchema.index({ rating: -1 })
 productSchema.index({ featured: -1 })
+productSchema.index({ recommended: -1 })
 productSchema.index({ createdAt: -1 })
 productSchema.index({ seller: 1 })
 productSchema.index({ brand: 1 })

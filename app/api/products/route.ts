@@ -19,6 +19,8 @@ export async function GET(request: NextRequest) {
     const sort = searchParams.get("sort") || "createdAt"
     const featured = searchParams.get("featured")
     const sellerId = searchParams.get("sellerId")
+    const sale = searchParams.get("sale")
+    const recommended = searchParams.get("recommended")
 
     const skip = (page - 1) * limit
 
@@ -26,7 +28,13 @@ export async function GET(request: NextRequest) {
     const filter: any = { isActive: true }
 
     if (category && category !== "all") {
-      filter.category = category
+      // Handle multiple categories separated by comma
+      const categories = category.split(",").map(c => c.trim()).filter(c => c)
+      if (categories.length === 1) {
+        filter.category = { $regex: new RegExp(`^${categories[0]}$`, "i") }
+      } else if (categories.length > 1) {
+        filter.category = { $in: categories.map(c => new RegExp(`^${c}$`, "i")) }
+      }
     }
 
     if (sellerId) {
@@ -35,6 +43,15 @@ export async function GET(request: NextRequest) {
 
     if (featured === "true") {
       filter.featured = true
+    }
+
+    if (sale === "true") {
+      filter.originalPrice = { $exists: true, $gt: 0 }
+      filter.$expr = { $lt: ["$price", "$originalPrice"] }
+    }
+
+    if (recommended === "true") {
+      filter.recommended = true
     }
 
     if (search && search.trim()) {
@@ -62,8 +79,10 @@ export async function GET(request: NextRequest) {
     // Size filter
     const sizes = searchParams.get("sizes")
     if (sizes) {
-      const sizeArray = sizes.split(",")
-      filter["variations.sizes"] = { $in: sizeArray }
+      const sizeArray = sizes.split(",").map(s => s.trim()).filter(s => s)
+      if (sizeArray.length > 0) {
+        filter["variations.sizes"] = { $in: sizeArray }
+      }
     }
 
     // Build sort object
@@ -86,6 +105,9 @@ export async function GET(request: NextRequest) {
         break
       case "featured":
         sortObj = { featured: -1, rating: -1 }
+        break
+      case "trending":
+        sortObj = { sold: -1, views: -1 }
         break
       case "name":
         sortObj = { name: 1 }

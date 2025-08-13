@@ -92,14 +92,16 @@ export function ReviewSection({ productId, reviews }: ReviewSectionProps) {
     }
   }
 
+  const safeReviews = reviews || []
+  
   const averageRating =
-    reviews.length > 0 ? reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length : 0
+    safeReviews.length > 0 ? safeReviews.reduce((sum, review) => sum + review.rating, 0) / safeReviews.length : 0
 
   const ratingDistribution = [5, 4, 3, 2, 1].map((star) => ({
     star,
-    count: reviews.filter((review) => review.rating === star).length,
+    count: safeReviews.filter((review) => review.rating === star).length,
     percentage:
-      reviews.length > 0 ? (reviews.filter((review) => review.rating === star).length / reviews.length) * 100 : 0,
+      safeReviews.length > 0 ? (safeReviews.filter((review) => review.rating === star).length / safeReviews.length) * 100 : 0,
   }))
 
   return (
@@ -120,7 +122,7 @@ export function ReviewSection({ productId, reviews }: ReviewSectionProps) {
                   />
                 ))}
               </div>
-              <p className="text-gray-600">Based on {reviews.length} reviews</p>
+              <p className="text-gray-600">Based on {safeReviews.length} reviews</p>
             </div>
 
             <div className="space-y-2">
@@ -197,14 +199,14 @@ export function ReviewSection({ productId, reviews }: ReviewSectionProps) {
       <div className="space-y-4">
         <h3 className="text-lg font-semibold">Customer Reviews</h3>
 
-        {reviews.length === 0 ? (
+        {safeReviews.length === 0 ? (
           <Card>
             <CardContent className="p-6 text-center text-gray-600">
               No reviews yet. Be the first to review this product!
             </CardContent>
           </Card>
         ) : (
-          reviews.map((review) => (
+          safeReviews.map((review) => (
             <Card key={review._id}>
               <CardContent className="p-6">
                 <div className="flex items-start gap-4">
